@@ -1,0 +1,31 @@
+name: AuthMeUI
+version: '${project.version}'
+main: com.github.TejasLamba2006.AuthMeUI.AuthMeUIPlugin
+api-version: '1.21'
+author: TejasLamba2006
+description: Modern Dialog-Based Authentication UI for AuthMe
+website: https://github.com/TejasLamba2006/AuthMeUI
+
+depend:
+  - AuthMe
+
+softdepend:
+  - PlaceholderAPI
+
+commands:
+  authmeui:
+    description: AuthMeUI administration and dialog commands
+    usage: /<command> <show login|register> | <reload>
+    aliases: [amui, authui]
+    permission: authmeui.command
+
+permissions:
+  authmeui.command:
+    description: Allows access to AuthMeUI commands
+    default: true
+  authmeui.admin:
+    description: Allows reloading configuration
+    default: op
+  authmeui.bypass:
+    description: Bypass authentication dialogs
+    default: false
