@@ -8,6 +8,8 @@ A modern, sleek dialog-based authentication interface for [AuthMe](https://githu
 
 </center>
 
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/NH7pD3-_vso" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
 ## Overview
 
 AuthMeUI replaces the traditional chat-based login and registration prompts with beautiful, native Minecraft dialogs. Players see clean popup windows for entering passwords, registering accounts, and accepting server rules - no more spamming commands in chat!
@@ -38,15 +40,15 @@ AuthMeUI is compatible with all major AuthMe forks:
 
 ### Login Dialog
 
-![Login Dialog](https://via.placeholder.com/600x400?text=Login+Dialog+Screenshot)
+![Login Dialog](https://cdn.modrinth.com/data/cached_images/67c218f0ef4204d3daaa53e78c84f8cf459a7cd4_0.webp)
 
 ### Registration Dialog  
 
-![Registration Dialog](https://via.placeholder.com/600x400?text=Registration+Dialog+Screenshot)
+![Registration Dialog](https://cdn.modrinth.com/data/cached_images/2e54179dbd4ac7048d2453c70218aed1878e5578_0.webp)
 
 ### Rules Dialog
 
-![Rules Dialog](https://via.placeholder.com/600x400?text=Rules+Dialog+Screenshot)
+![Rules Dialog](https://cdn.modrinth.com/data/cached_images/b34021f9e9eb4742e3d36d1f6f5dd92c8429e36b_0.webp)
 
 ## Requirements
 
