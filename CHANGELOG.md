@@ -4,6 +4,29 @@ All notable changes to AuthMeUI will be documented in this file.
 
 ---
 
+## [1.2.0] - 2026-03-24
+
+### Multilingual support (i18n)
+
+- **Per-player language** — texts use the Minecraft client locale when `localization.auto-detect-player-locale` is enabled (including configuration phase / pre-join dialogs).
+- **Translation files** — add `plugins/AuthMeUI/translations/<language>.yml` (e.g. `en.yml`, `ru.yml`). Bundled default: `translations/en.yml`.
+- **Config** — `localization.default-language` (fallback when no matching file exists) and optional `localization.prune-legacy-config` (see migration below).
+
+### Backward compatibility
+
+- On startup and `/authmeui reload`, **legacy text keys** still present in `config.yml` (titles, bodies, labels, `messages.*`) are **copied into** `translations/en.yml` so existing customized servers keep their wording.
+- New installs: dialog copy lives in translation files; `config.yml` keeps behaviour flags (e.g. rules enabled, agreement checkbox key, optional custom action buttons).
+
+### Migration / cleanup
+
+- Set `localization.prune-legacy-config: true` **once** to remove migrated text keys from `config.yml`. A backup is written first as `plugins/AuthMeUI/config.backup-before-legacy-prune.yml` (only created if it does not already exist).
+
+### Developer / code
+
+- Centralized message resolution through `LocalizationManager` and `SettingsManager`; removed duplicated hardcoded default strings from commands and listeners.
+
+---
+
 ## [1.1.0] - 2026-01-24
 
 ### New Feature: Pre-Join Authentication

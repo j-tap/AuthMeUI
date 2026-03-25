@@ -1,6 +1,5 @@
 package com.github.TejasLamba2006.AuthMeUI.dialogs;
 
-import com.github.TejasLamba2006.AuthMeUI.AuthMeUIPlugin;
 import com.github.TejasLamba2006.AuthMeUI.configuration.SettingsManager;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -24,11 +23,9 @@ public class RegistrationDialogBuilder {
     private static final String CONFIRM_INPUT_KEY = "confirm";
     private static final int MAX_PASSWORD_INPUT_LENGTH = 128;
 
-    private final AuthMeUIPlugin plugin;
     private final SettingsManager settings;
 
-    public RegistrationDialogBuilder(AuthMeUIPlugin plugin, SettingsManager settings) {
-        this.plugin = plugin;
+    public RegistrationDialogBuilder(SettingsManager settings) {
         this.settings = settings;
     }
 
@@ -37,16 +34,24 @@ public class RegistrationDialogBuilder {
     }
 
     public Dialog construct(Player player, Component errorNotice) {
-        List<DialogBody> contentSections = buildBodyContent();
+        return constructForLocale(settings.extractLocaleTag(player), errorNotice);
+    }
+
+    public Dialog constructForLocale(String localeTag) {
+        return constructForLocale(localeTag, null);
+    }
+
+    public Dialog constructForLocale(String localeTag, Component errorNotice) {
+        List<DialogBody> contentSections = buildBodyContent(localeTag);
 
         if (errorNotice != null) {
             contentSections.add(DialogBody.plainMessage(errorNotice));
         }
 
-        List<TextDialogInput> inputFields = createInputFields();
-        List<ActionButton> actionButtons = buildActionButtons();
+        List<TextDialogInput> inputFields = createInputFields(localeTag);
+        List<ActionButton> actionButtons = buildActionButtons(localeTag);
 
-        DialogBase dialogBase = DialogBase.builder(settings.getRegisterTitle())
+        DialogBase dialogBase = DialogBase.builder(settings.getRegisterTitle(localeTag))
                 .canCloseWithEscape(settings.canCloseWithEscape())
                 .afterAction(DialogAfterAction.CLOSE)
                 .body(contentSections)
@@ -60,10 +65,10 @@ public class RegistrationDialogBuilder {
         });
     }
 
-    private List<DialogBody> buildBodyContent() {
+    private List<DialogBody> buildBodyContent(String localeTag) {
         List<DialogBody> content = new ArrayList<>();
 
-        for (String line : settings.getRegisterBodyRaw()) {
+        for (String line : settings.getRegisterBodyRaw(localeTag)) {
             content.add(DialogBody.plainMessage(settings.parseText(line)));
         }
 
@@ -74,15 +79,15 @@ public class RegistrationDialogBuilder {
         return content;
     }
 
-    private List<TextDialogInput> createInputFields() {
-        TextDialogInput passwordField = DialogInput.text(PASSWORD_INPUT_KEY, settings.getRegisterPasswordLabel())
+    private List<TextDialogInput> createInputFields(String localeTag) {
+        TextDialogInput passwordField = DialogInput.text(PASSWORD_INPUT_KEY, settings.getRegisterPasswordLabel(localeTag))
                 .width(settings.getInputWidth())
                 .labelVisible(true)
                 .maxLength(MAX_PASSWORD_INPUT_LENGTH)
                 .initial("")
                 .build();
 
-        TextDialogInput confirmField = DialogInput.text(CONFIRM_INPUT_KEY, settings.getRegisterConfirmLabel())
+        TextDialogInput confirmField = DialogInput.text(CONFIRM_INPUT_KEY, settings.getRegisterConfirmLabel(localeTag))
                 .width(settings.getInputWidth())
                 .labelVisible(true)
                 .maxLength(MAX_PASSWORD_INPUT_LENGTH)
@@ -92,11 +97,11 @@ public class RegistrationDialogBuilder {
         return List.of(passwordField, confirmField);
     }
 
-    private List<ActionButton> buildActionButtons() {
-        ActionButton submitButton = ActionButton.builder(settings.getRegisterSubmitButton())
+    private List<ActionButton> buildActionButtons(String localeTag) {
+        ActionButton submitButton = ActionButton.builder(settings.getRegisterSubmitButton(localeTag))
                 .action(DialogAction.customClick(DialogIdentifiers.REGISTER_SUBMIT, null))
                 .build();
 
-        return settings.buildActionButtons("register-dialog", submitButton);
+        return settings.buildActionButtons("register-dialog", submitButton, localeTag);
     }
 }

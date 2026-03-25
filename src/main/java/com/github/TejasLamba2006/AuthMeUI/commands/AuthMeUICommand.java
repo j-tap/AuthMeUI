@@ -51,31 +51,27 @@ public class AuthMeUICommand implements TabExecutor {
 
     private boolean executeReload(CommandSender sender) {
         if (!sender.hasPermission("authmeui.admin")) {
-            Component noPermMsg = settings.getMessage("commands.no-permission",
-                    "<red>You don't have permission to do that!</red>");
+            Component noPermMsg = getMessage(sender, "commands.no-permission");
             sender.sendMessage(noPermMsg);
             return true;
         }
 
         settings.reload();
 
-        Component successMsg = settings.getMessage("commands.config-reloaded",
-                "<green>AuthMeUI configuration reloaded successfully!</green>");
+        Component successMsg = getMessage(sender, "commands.config-reloaded");
         sender.sendMessage(successMsg);
         return true;
     }
 
     private boolean executeShowDialog(CommandSender sender, String[] args, String label) {
         if (!(sender instanceof Player player)) {
-            Component playerOnlyMsg = settings.getMessage("commands.player-only",
-                    "<red>This command can only be used by players!</red>");
+            Component playerOnlyMsg = getMessage(sender, "commands.player-only");
             sender.sendMessage(playerOnlyMsg);
             return true;
         }
 
         if (!authBridge.isConnected()) {
-            Component unavailableMsg = settings.getMessage("commands.authme-unavailable",
-                    "<red>AuthMe is not available!</red>");
+            Component unavailableMsg = settings.getMessage(player, "commands.authme-unavailable");
             player.sendMessage(unavailableMsg);
             return true;
         }
@@ -90,17 +86,16 @@ public class AuthMeUICommand implements TabExecutor {
         switch (dialogType) {
             case "login" -> {
                 player.showDialog(dialogManager.createLoginDialog(player));
-                Component openedMsg = settings.getMessage("commands.dialog-opened", "<gray>Dialog opened.</gray>");
+                Component openedMsg = settings.getMessage(player, "commands.dialog-opened");
                 player.sendMessage(openedMsg);
             }
             case "register" -> {
                 player.showDialog(dialogManager.createRegistrationDialog(player));
-                Component openedMsg = settings.getMessage("commands.dialog-opened", "<gray>Dialog opened.</gray>");
+                Component openedMsg = settings.getMessage(player, "commands.dialog-opened");
                 player.sendMessage(openedMsg);
             }
             default -> {
-                Component invalidMsg = settings.getMessage("commands.invalid-dialog",
-                        "<yellow>Invalid dialog type. Use: login or register</yellow>");
+                Component invalidMsg = settings.getMessage(player, "commands.invalid-dialog");
                 player.sendMessage(invalidMsg);
             }
         }
@@ -109,10 +104,17 @@ public class AuthMeUICommand implements TabExecutor {
     }
 
     private void sendUsageMessage(CommandSender sender, String label) {
-        Component usageMsg = settings.getMessage("commands.usage",
-                "<yellow>Usage: /%command% show <login|register> | reload</yellow>")
+        Component usageMsg = getMessage(sender, "commands.usage")
                 .replaceText(builder -> builder.matchLiteral("%command%").replacement(label));
         sender.sendMessage(usageMsg);
+    }
+
+    private Component getMessage(CommandSender sender, String path) {
+        if (sender instanceof Player player) {
+            return settings.getMessage(player, path);
+        }
+
+        return settings.getMessage(path);
     }
 
     @Override

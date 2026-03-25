@@ -21,7 +21,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
+import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class DialogInteractionListener implements Listener {
@@ -97,6 +99,7 @@ public class DialogInteractionListener implements Listener {
 
         UUID uniqueId = connection.getProfile().getId();
         String playerName = connection.getProfile().getName();
+        String localeTag = extractLocaleTag(connection);
         Audience audience = connection.getAudience();
 
         if (uniqueId == null || playerName == null) {
@@ -104,11 +107,11 @@ public class DialogInteractionListener implements Listener {
         }
 
         if (actionKey.equals(DialogIdentifiers.LOGIN_SUBMIT)) {
-            handleConfigPhaseLogin(connection, uniqueId, playerName, audience, responseView);
+            handleConfigPhaseLogin(connection, uniqueId, playerName, localeTag, audience, responseView);
         } else if (actionKey.equals(DialogIdentifiers.REGISTER_SUBMIT)) {
-            handleConfigPhaseRegistration(connection, uniqueId, playerName, audience, responseView);
+            handleConfigPhaseRegistration(connection, uniqueId, playerName, localeTag, audience, responseView);
         } else if (actionKey.equals(DialogIdentifiers.RULES_CONFIRM)) {
-            handleConfigPhaseRulesConfirmation(connection, uniqueId, playerName, audience, responseView);
+            handleConfigPhaseRulesConfirmation(connection, uniqueId, playerName, localeTag, audience, responseView);
         }
     }
 
@@ -116,28 +119,28 @@ public class DialogInteractionListener implements Listener {
             PlayerConfigurationConnection connection,
             UUID uniqueId,
             String playerName,
+            String localeTag,
             Audience audience,
             DialogResponseView response) {
 
         String enteredPassword = response.getText(PASSWORD_FIELD);
 
         if (isNullOrEmpty(enteredPassword)) {
-            Component error = settings.getMessage("login.password-empty", "<red>Please enter your password!</red>");
-            audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, error));
+            Component error = settings.getMessage(localeTag, "login.password-empty");
+            audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
             return;
         }
 
         if (!authBridge.isPlayerRegistered(playerName)) {
-            Component error = settings.getMessage("login.not-registered",
-                    "<yellow>You don't have an account. Please register first!</yellow>");
+            Component error = settings.getMessage(localeTag, "login.not-registered");
             // Show registration dialog instead
             if (configPhaseListener != null) {
                 configPhaseListener.updateRegistrationStatus(uniqueId, false);
             }
             if (settings.isRulesDialogEnabled()) {
-                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName));
+                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName, localeTag));
             } else {
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             }
             return;
         }
@@ -153,22 +156,19 @@ public class DialogInteractionListener implements Listener {
                 }
             }
             case INVALID_PASSWORD -> {
-                Component error = settings.getMessage("login.password-incorrect",
-                        "<red>Incorrect password. Please try again.</red>");
-                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, error));
+                Component error = settings.getMessage(localeTag, "login.password-incorrect");
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
             }
             case NOT_REGISTERED -> {
-                Component error = settings.getMessage("login.not-registered",
-                        "<yellow>You don't have an account. Please register first!</yellow>");
+                Component error = settings.getMessage(localeTag, "login.not-registered");
                 if (configPhaseListener != null) {
                     configPhaseListener.updateRegistrationStatus(uniqueId, false);
                 }
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             }
             default -> {
-                Component error = settings.getMessage("login.password-incorrect",
-                        "<red>Incorrect password. Please try again.</red>");
-                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, error));
+                Component error = settings.getMessage(localeTag, "login.password-incorrect");
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
             }
         }
     }
@@ -177,6 +177,7 @@ public class DialogInteractionListener implements Listener {
             PlayerConfigurationConnection connection,
             UUID uniqueId,
             String playerName,
+            String localeTag,
             Audience audience,
             DialogResponseView response) {
 
@@ -184,9 +185,8 @@ public class DialogInteractionListener implements Listener {
         String confirmPassword = response.getText(CONFIRM_FIELD);
 
         if (isNullOrEmpty(enteredPassword) || isNullOrEmpty(confirmPassword)) {
-            Component error = settings.getMessage("register.fields-empty",
-                    "<red>Please fill in both password fields!</red>");
-            audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+            Component error = settings.getMessage(localeTag, "register.fields-empty");
+            audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             return;
         }
 
@@ -201,41 +201,35 @@ public class DialogInteractionListener implements Listener {
                 }
             }
             case ALREADY_EXISTS -> {
-                Component error = settings.getMessage("register.already-registered",
-                        "<yellow>You already have an account. Please login instead!</yellow>");
+                Component error = settings.getMessage(localeTag, "register.already-registered");
                 if (configPhaseListener != null) {
                     configPhaseListener.updateRegistrationStatus(uniqueId, true);
                 }
-                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, error));
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
             }
             case PASSWORD_MISMATCH -> {
-                Component error = settings.getMessage("register.passwords-mismatch",
-                        "<red>Passwords do not match. Please try again.</red>");
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+                Component error = settings.getMessage(localeTag, "register.passwords-mismatch");
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             }
             case PASSWORD_TOO_SHORT -> {
                 int minLength = authBridge.fetchMinPasswordLength();
-                Component error = settings.getMessage("register.password-too-short",
-                        "<red>Password must be at least <white>%min%</white> characters!</red>",
+                Component error = settings.getMessage(localeTag, "register.password-too-short",
                         Map.of("min", String.valueOf(minLength)));
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             }
             case PASSWORD_TOO_LONG -> {
                 int maxLength = authBridge.fetchMaxPasswordLength();
-                Component error = settings.getMessage("register.password-too-long",
-                        "<red>Password cannot exceed <white>%max%</white> characters!</red>",
+                Component error = settings.getMessage(localeTag, "register.password-too-long",
                         Map.of("max", String.valueOf(maxLength)));
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             }
             case INVALID_PASSWORD -> {
-                Component error = settings.getMessage("register.password-invalid",
-                        "<red>Invalid password format. Please try again.</red>");
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+                Component error = settings.getMessage(localeTag, "register.password-invalid");
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             }
             default -> {
-                Component error = settings.getMessage("register.failed",
-                        "<red>Registration failed. Please try again.</red>");
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, error));
+                Component error = settings.getMessage(localeTag, "register.failed");
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
             }
         }
     }
@@ -244,6 +238,7 @@ public class DialogInteractionListener implements Listener {
             PlayerConfigurationConnection connection,
             UUID uniqueId,
             String playerName,
+            String localeTag,
             Audience audience,
             DialogResponseView response) {
 
@@ -252,13 +247,13 @@ public class DialogInteractionListener implements Listener {
 
             if (hasAgreed == null || !hasAgreed) {
                 // Re-show the rules dialog
-                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName));
+                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName, localeTag));
                 return;
             }
         }
 
         // Show registration dialog
-        audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName));
+        audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag));
     }
 
     // ==================== In-Game Handlers ====================
@@ -267,13 +262,12 @@ public class DialogInteractionListener implements Listener {
         String enteredPassword = response.getText(PASSWORD_FIELD);
 
         if (isNullOrEmpty(enteredPassword)) {
-            displayLoginWithError(player, "login.password-empty", "<red>Please enter your password!</red>");
+            displayLoginWithError(player, "login.password-empty");
             return;
         }
 
         if (!authBridge.isPlayerRegistered(player.getName())) {
-            displayRegistrationWithError(player, "login.not-registered",
-                    "<yellow>You don't have an account. Please register first!</yellow>");
+            displayRegistrationWithError(player, "login.not-registered");
             return;
         }
 
@@ -283,12 +277,9 @@ public class DialogInteractionListener implements Listener {
             case SUCCESS -> {
                 // Successful login; no further action needed
             }
-            case INVALID_PASSWORD -> displayLoginWithError(player, "login.password-incorrect",
-                    "<red>Incorrect password. Please try again.</red>");
-            case NOT_REGISTERED -> displayRegistrationWithError(player, "login.not-registered",
-                    "<yellow>You don't have an account. Please register first!</yellow>");
-            default -> displayLoginWithError(player, "login.password-incorrect",
-                    "<red>Incorrect password. Please try again.</red>");
+            case INVALID_PASSWORD -> displayLoginWithError(player, "login.password-incorrect");
+            case NOT_REGISTERED -> displayRegistrationWithError(player, "login.not-registered");
+            default -> displayLoginWithError(player, "login.password-incorrect");
         }
     }
 
@@ -297,8 +288,7 @@ public class DialogInteractionListener implements Listener {
         String confirmPassword = response.getText(CONFIRM_FIELD);
 
         if (isNullOrEmpty(enteredPassword) || isNullOrEmpty(confirmPassword)) {
-            displayRegistrationWithError(player, "register.fields-empty",
-                    "<red>Please fill in both password fields!</red>");
+            displayRegistrationWithError(player, "register.fields-empty");
             return;
         }
 
@@ -306,26 +296,20 @@ public class DialogInteractionListener implements Listener {
 
         switch (result) {
             case SUCCESS -> scheduleRegistrationVerification(player);
-            case ALREADY_EXISTS -> displayLoginWithError(player, "register.already-registered",
-                    "<yellow>You already have an account. Please login instead!</yellow>");
-            case PASSWORD_MISMATCH -> displayRegistrationWithError(player, "register.passwords-mismatch",
-                    "<red>Passwords do not match. Please try again.</red>");
+            case ALREADY_EXISTS -> displayLoginWithError(player, "register.already-registered");
+            case PASSWORD_MISMATCH -> displayRegistrationWithError(player, "register.passwords-mismatch");
             case PASSWORD_TOO_SHORT -> {
                 int minLength = authBridge.fetchMinPasswordLength();
                 displayRegistrationWithError(player, "register.password-too-short",
-                        "<red>Password must be at least <white>%min%</white> characters!</red>",
                         Map.of("min", String.valueOf(minLength)));
             }
             case PASSWORD_TOO_LONG -> {
                 int maxLength = authBridge.fetchMaxPasswordLength();
                 displayRegistrationWithError(player, "register.password-too-long",
-                        "<red>Password cannot exceed <white>%max%</white> characters!</red>",
                         Map.of("max", String.valueOf(maxLength)));
             }
-            case INVALID_PASSWORD -> displayRegistrationWithError(player, "register.password-invalid",
-                    "<red>Invalid password format. Please try again.</red>");
-            default -> displayRegistrationWithError(player, "register.failed",
-                    "<red>Registration failed. Please try again.</red>");
+            case INVALID_PASSWORD -> displayRegistrationWithError(player, "register.password-invalid");
+            default -> displayRegistrationWithError(player, "register.failed");
         }
     }
 
@@ -351,26 +335,25 @@ public class DialogInteractionListener implements Listener {
         dialogManager.presentAuthDialog(player, hasAccount);
     }
 
-    private void displayLoginWithError(Player player, String messageKey, String defaultMessage) {
+    private void displayLoginWithError(Player player, String messageKey) {
         scheduleDialogReopen(() -> {
             if (!authBridge.isPlayerAuthenticated(player)) {
-                Component errorMsg = settings.getMessage(messageKey, defaultMessage);
+                Component errorMsg = settings.getMessage(player, messageKey);
                 player.showDialog(dialogManager.createLoginDialog(player, errorMsg));
             }
         });
     }
 
-    private void displayRegistrationWithError(Player player, String messageKey, String defaultMessage) {
-        displayRegistrationWithError(player, messageKey, defaultMessage, null);
+    private void displayRegistrationWithError(Player player, String messageKey) {
+        displayRegistrationWithError(player, messageKey, null);
     }
 
-    private void displayRegistrationWithError(Player player, String messageKey, String defaultMessage,
-            Map<String, String> placeholders) {
+    private void displayRegistrationWithError(Player player, String messageKey, Map<String, String> placeholders) {
         scheduleDialogReopen(() -> {
             if (!authBridge.isPlayerAuthenticated(player)) {
                 Component errorMsg = placeholders != null
-                        ? settings.getMessage(messageKey, defaultMessage, placeholders)
-                        : settings.getMessage(messageKey, defaultMessage);
+                        ? settings.getMessage(player, messageKey, placeholders)
+                        : settings.getMessage(player, messageKey);
                 player.showDialog(dialogManager.createRegistrationDialog(player, errorMsg));
             }
         });
@@ -383,8 +366,7 @@ public class DialogInteractionListener implements Listener {
                         || authBridge.isPlayerRegistered(player.getName());
 
                 if (!isValid) {
-                    Component errorMsg = settings.getMessage("register.failed",
-                            "<red>Registration failed. Please try again.</red>");
+                    Component errorMsg = settings.getMessage(player, "register.failed");
                     player.showDialog(dialogManager.createRegistrationDialog(player, errorMsg));
                 }
             }
@@ -397,5 +379,15 @@ public class DialogInteractionListener implements Listener {
 
     private boolean isNullOrEmpty(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String extractLocaleTag(PlayerConfigurationConnection connection) {
+        try {
+            Method localeMethod = connection.getClass().getMethod("locale");
+            Object localeValue = localeMethod.invoke(connection);
+            return Objects.toString(localeValue, null);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
     }
 }

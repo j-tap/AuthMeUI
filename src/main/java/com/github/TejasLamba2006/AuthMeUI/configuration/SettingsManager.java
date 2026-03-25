@@ -6,27 +6,74 @@ import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
 
 public class SettingsManager {
 
+    private static final List<String> LEGACY_TRANSLATION_PATHS = List.of(
+            "login-dialog.title",
+            "login-dialog.body",
+            "login-dialog.password-label",
+            "login-dialog.submit-button",
+            "register-dialog.title",
+            "register-dialog.body",
+            "register-dialog.password-label",
+            "register-dialog.confirm-label",
+            "register-dialog.submit-button",
+            "rules-dialog.title",
+            "rules-dialog.body",
+            "rules-dialog.agreement.label",
+            "rules-dialog.confirm-button",
+            "messages.login.password-empty",
+            "messages.login.password-incorrect",
+            "messages.login.not-registered",
+            "messages.login.success",
+            "messages.register.fields-empty",
+            "messages.register.passwords-mismatch",
+            "messages.register.password-too-short",
+            "messages.register.password-too-long",
+            "messages.register.password-invalid",
+            "messages.register.already-registered",
+            "messages.register.failed",
+            "messages.register.success",
+            "messages.rules.must-accept",
+            "messages.commands.no-permission",
+            "messages.commands.player-only",
+            "messages.commands.authme-unavailable",
+            "messages.commands.config-reloaded",
+            "messages.commands.usage",
+            "messages.commands.dialog-opened",
+            "messages.commands.invalid-dialog");
+
     private final AuthMeUIPlugin plugin;
     private final MiniMessage miniMessage;
+    private final LocalizationManager localizationManager;
     private FileConfiguration config;
 
     public SettingsManager(AuthMeUIPlugin plugin) {
         this.plugin = plugin;
         this.miniMessage = MiniMessage.miniMessage();
+        this.localizationManager = new LocalizationManager(plugin);
         this.config = plugin.getConfig();
+        this.localizationManager.reload();
+        migrateLegacyTextConfig();
     }
 
     public void reload() {
         plugin.reloadConfig();
         this.config = plugin.getConfig();
+        this.localizationManager.reload();
+        migrateLegacyTextConfig();
     }
 
     public boolean useConfigurationPhase() {
@@ -50,46 +97,111 @@ public class SettingsManager {
     }
 
     public Component getLoginTitle() {
-        String raw = config.getString("login-dialog.title", "<white><bold>Welcome Back!</bold></white>");
-        return miniMessage.deserialize(raw);
+        return getLoginTitle((Player) null);
+    }
+
+    public Component getLoginTitle(Player player) {
+        return getLoginTitle(resolveLocaleTag(player));
+    }
+
+    public Component getLoginTitle(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "login-dialog.title"));
     }
 
     public List<String> getLoginBodyRaw() {
-        return config.getStringList("login-dialog.body");
+        return getLoginBodyRaw((Player) null);
+    }
+
+    public List<String> getLoginBodyRaw(Player player) {
+        return getLoginBodyRaw(resolveLocaleTag(player));
+    }
+
+    public List<String> getLoginBodyRaw(String localeTag) {
+        return getLocalizedStringList(localeTag, "login-dialog.body");
     }
 
     public Component getLoginPasswordLabel() {
-        String raw = config.getString("login-dialog.password-label", "Password");
-        return miniMessage.deserialize(raw);
+        return getLoginPasswordLabel((Player) null);
+    }
+
+    public Component getLoginPasswordLabel(Player player) {
+        return getLoginPasswordLabel(resolveLocaleTag(player));
+    }
+
+    public Component getLoginPasswordLabel(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "login-dialog.password-label"));
     }
 
     public Component getLoginSubmitButton() {
-        String raw = config.getString("login-dialog.submit-button", "<green>Sign In</green>");
-        return miniMessage.deserialize(raw);
+        return getLoginSubmitButton((Player) null);
+    }
+
+    public Component getLoginSubmitButton(Player player) {
+        return getLoginSubmitButton(resolveLocaleTag(player));
+    }
+
+    public Component getLoginSubmitButton(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "login-dialog.submit-button"));
     }
 
     public Component getRegisterTitle() {
-        String raw = config.getString("register-dialog.title", "<white><bold>Create Account</bold></white>");
-        return miniMessage.deserialize(raw);
+        return getRegisterTitle((Player) null);
+    }
+
+    public Component getRegisterTitle(Player player) {
+        return getRegisterTitle(resolveLocaleTag(player));
+    }
+
+    public Component getRegisterTitle(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.title"));
     }
 
     public List<String> getRegisterBodyRaw() {
-        return config.getStringList("register-dialog.body");
+        return getRegisterBodyRaw((Player) null);
+    }
+
+    public List<String> getRegisterBodyRaw(Player player) {
+        return getRegisterBodyRaw(resolveLocaleTag(player));
+    }
+
+    public List<String> getRegisterBodyRaw(String localeTag) {
+        return getLocalizedStringList(localeTag, "register-dialog.body");
     }
 
     public Component getRegisterPasswordLabel() {
-        String raw = config.getString("register-dialog.password-label", "Password");
-        return miniMessage.deserialize(raw);
+        return getRegisterPasswordLabel((Player) null);
+    }
+
+    public Component getRegisterPasswordLabel(Player player) {
+        return getRegisterPasswordLabel(resolveLocaleTag(player));
+    }
+
+    public Component getRegisterPasswordLabel(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.password-label"));
     }
 
     public Component getRegisterConfirmLabel() {
-        String raw = config.getString("register-dialog.confirm-label", "Confirm Password");
-        return miniMessage.deserialize(raw);
+        return getRegisterConfirmLabel((Player) null);
+    }
+
+    public Component getRegisterConfirmLabel(Player player) {
+        return getRegisterConfirmLabel(resolveLocaleTag(player));
+    }
+
+    public Component getRegisterConfirmLabel(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.confirm-label"));
     }
 
     public Component getRegisterSubmitButton() {
-        String raw = config.getString("register-dialog.submit-button", "<green>Register</green>");
-        return miniMessage.deserialize(raw);
+        return getRegisterSubmitButton((Player) null);
+    }
+
+    public Component getRegisterSubmitButton(Player player) {
+        return getRegisterSubmitButton(resolveLocaleTag(player));
+    }
+
+    public Component getRegisterSubmitButton(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.submit-button"));
     }
 
     public boolean isRulesDialogEnabled() {
@@ -97,12 +209,27 @@ public class SettingsManager {
     }
 
     public Component getRulesTitle() {
-        String raw = config.getString("rules-dialog.title", "<white><bold>Server Rules</bold></white>");
-        return miniMessage.deserialize(raw);
+        return getRulesTitle((Player) null);
+    }
+
+    public Component getRulesTitle(Player player) {
+        return getRulesTitle(resolveLocaleTag(player));
+    }
+
+    public Component getRulesTitle(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "rules-dialog.title"));
     }
 
     public List<String> getRulesBodyRaw() {
-        return config.getStringList("rules-dialog.body");
+        return getRulesBodyRaw((Player) null);
+    }
+
+    public List<String> getRulesBodyRaw(Player player) {
+        return getRulesBodyRaw(resolveLocaleTag(player));
+    }
+
+    public List<String> getRulesBodyRaw(String localeTag) {
+        return getLocalizedStringList(localeTag, "rules-dialog.body");
     }
 
     public boolean isAgreementRequired() {
@@ -115,27 +242,60 @@ public class SettingsManager {
     }
 
     public Component getAgreementLabel() {
-        String raw = config.getString("rules-dialog.agreement.label",
-                "<gray>I have read and agree to the server rules</gray>");
-        return miniMessage.deserialize(raw);
+        return getAgreementLabel((Player) null);
+    }
+
+    public Component getAgreementLabel(Player player) {
+        return getAgreementLabel(resolveLocaleTag(player));
+    }
+
+    public Component getAgreementLabel(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "rules-dialog.agreement.label"));
     }
 
     public Component getRulesConfirmButton() {
-        String raw = config.getString("rules-dialog.confirm-button", "<green>I Accept</green>");
-        return miniMessage.deserialize(raw);
+        return getRulesConfirmButton((Player) null);
+    }
+
+    public Component getRulesConfirmButton(Player player) {
+        return getRulesConfirmButton(resolveLocaleTag(player));
+    }
+
+    public Component getRulesConfirmButton(String localeTag) {
+        return parseText(getLocalizedString(localeTag, "rules-dialog.confirm-button"));
     }
 
     public boolean isMetricsEnabled() {
         return config.getBoolean("metrics.enabled", true);
     }
 
-    public Component getMessage(String path, String defaultValue) {
-        String raw = config.getString("messages." + path, defaultValue);
-        return miniMessage.deserialize(raw);
+    public String extractLocaleTag(Player player) {
+        return resolveLocaleTag(player);
     }
 
-    public Component getMessage(String path, String defaultValue, Map<String, String> replacements) {
-        String raw = config.getString("messages." + path, defaultValue);
+    public Component getMessage(String path) {
+        return getMessage((String) null, path);
+    }
+
+    public Component getMessage(Player player, String path) {
+        return getMessage(resolveLocaleTag(player), path);
+    }
+
+    public Component getMessage(String localeTag, String path) {
+        String raw = getLocalizedString(localeTag, "messages." + path);
+        return parseText(raw);
+    }
+
+    public Component getMessage(String path, Map<String, String> replacements) {
+        return getMessage((String) null, path, replacements);
+    }
+
+    public Component getMessage(Player player, String path, Map<String, String> replacements) {
+        return getMessage(resolveLocaleTag(player), path, replacements);
+    }
+
+    public Component getMessage(String localeTag, String path, Map<String, String> replacements) {
+        String raw = getLocalizedString(localeTag, "messages." + path);
 
         if (replacements != null) {
             for (Map.Entry<String, String> entry : replacements.entrySet()) {
@@ -143,7 +303,7 @@ public class SettingsManager {
             }
         }
 
-        return miniMessage.deserialize(raw);
+        return parseText(raw);
     }
 
     public Component parseText(String raw) {
@@ -151,16 +311,29 @@ public class SettingsManager {
     }
 
     public List<ActionButton> buildActionButtons(String configSection, ActionButton primaryAction) {
+        return buildActionButtons(configSection, primaryAction, (String) null);
+    }
+
+    public List<ActionButton> buildActionButtons(String configSection, ActionButton primaryAction, Player player) {
+        return buildActionButtons(configSection, primaryAction, resolveLocaleTag(player));
+    }
+
+    public List<ActionButton> buildActionButtons(String configSection, ActionButton primaryAction, String localeTag) {
         List<ActionButton> buttons = new ArrayList<>();
         List<Map<?, ?>> rawActions = config.getMapList(configSection + ".actions");
 
         boolean hasPrimaryAction = false;
 
         if (rawActions != null && !rawActions.isEmpty()) {
-            for (Map<?, ?> actionMap : rawActions) {
+            for (int actionIndex = 0; actionIndex < rawActions.size(); actionIndex++) {
+                Map<?, ?> actionMap = rawActions.get(actionIndex);
                 String type = extractString(actionMap, "type", "submit").toLowerCase(Locale.ROOT);
                 String labelText = extractString(actionMap, "label", "<gray>Button</gray>");
-                Component label = miniMessage.deserialize(labelText);
+                String localizedLabel = getLocalizedString(
+                        localeTag,
+                        configSection + ".actions." + actionIndex + ".label",
+                        labelText);
+                Component label = miniMessage.deserialize(localizedLabel);
 
                 switch (type) {
                     case "submit" -> {
@@ -185,8 +358,104 @@ public class SettingsManager {
         return buttons;
     }
 
+    private String getLocalizedString(String localeTag, String path) {
+        return getLocalizedString(localeTag, path, "");
+    }
+
+    private String getLocalizedString(String localeTag, String path, String defaultValue) {
+        String legacyValue = config.getString(path, defaultValue);
+        return localizationManager.getStringByLocaleTag(localeTag, path, legacyValue);
+    }
+
+    private List<String> getLocalizedStringList(String localeTag, String path) {
+        List<String> legacyValue = config.getStringList(path);
+        return localizationManager.getStringListByLocaleTag(localeTag, path, legacyValue);
+    }
+
     private String extractString(Map<?, ?> map, String key, String defaultValue) {
         Object value = map.get(key);
         return value != null ? String.valueOf(value) : defaultValue;
+    }
+
+    private String resolveLocaleTag(Player player) {
+        if (player == null) {
+            return null;
+        }
+
+        try {
+            Method localeMethod = player.getClass().getMethod("locale");
+            Object localeValue = localeMethod.invoke(player);
+            return Objects.toString(localeValue, null);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private void migrateLegacyTextConfig() {
+        FileConfiguration englishTranslation = localizationManager.getTranslation("en");
+        if (englishTranslation == null) {
+            return;
+        }
+
+        boolean translationUpdated = false;
+        for (String path : LEGACY_TRANSLATION_PATHS) {
+            if (!config.contains(path)) {
+                continue;
+            }
+
+            if (config.isList(path)) {
+                List<?> value = config.getList(path);
+                if (value != null && !value.isEmpty()) {
+                    englishTranslation.set(path, value);
+                    translationUpdated = true;
+                }
+                continue;
+            }
+
+            if (config.isString(path)) {
+                String value = config.getString(path);
+                if (value != null && !value.isBlank()) {
+                    englishTranslation.set(path, value);
+                    translationUpdated = true;
+                }
+            }
+        }
+
+        if (translationUpdated) {
+            localizationManager.saveTranslation("en");
+        }
+
+        if (config.getBoolean("localization.prune-legacy-config", false)) {
+            pruneLegacyConfigKeys();
+        }
+    }
+
+    private void pruneLegacyConfigKeys() {
+        File dataFolder = plugin.getDataFolder();
+        File configFile = new File(dataFolder, "config.yml");
+        File backupFile = new File(dataFolder, "config.backup-before-legacy-prune.yml");
+
+        if (configFile.exists() && !backupFile.exists()) {
+            try {
+                config.save(backupFile);
+            } catch (IOException exception) {
+                plugin.getLogger().log(Level.WARNING, "Failed to create config backup before pruning legacy keys.", exception);
+                return;
+            }
+        }
+
+        boolean changed = false;
+        for (String path : LEGACY_TRANSLATION_PATHS) {
+            if (config.contains(path)) {
+                config.set(path, null);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            plugin.saveConfig();
+            plugin.reloadConfig();
+            this.config = plugin.getConfig();
+        }
     }
 }

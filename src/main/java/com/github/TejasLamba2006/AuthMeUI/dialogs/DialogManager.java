@@ -1,6 +1,5 @@
 package com.github.TejasLamba2006.AuthMeUI.dialogs;
 
-import com.github.TejasLamba2006.AuthMeUI.AuthMeUIPlugin;
 import com.github.TejasLamba2006.AuthMeUI.configuration.SettingsManager;
 import io.papermc.paper.dialog.Dialog;
 import net.kyori.adventure.text.Component;
@@ -13,11 +12,11 @@ public class DialogManager {
     private final RegistrationDialogBuilder registerBuilder;
     private final RulesDialogBuilder rulesBuilder;
 
-    public DialogManager(AuthMeUIPlugin plugin, SettingsManager settings) {
+    public DialogManager(SettingsManager settings) {
         this.settings = settings;
         this.loginBuilder = new LoginDialogBuilder(settings);
-        this.registerBuilder = new RegistrationDialogBuilder(plugin, settings);
-        this.rulesBuilder = new RulesDialogBuilder(plugin, settings);
+        this.registerBuilder = new RegistrationDialogBuilder(settings);
+        this.rulesBuilder = new RulesDialogBuilder(settings);
     }
 
     // ==================== Player-based methods (for in-game use)
@@ -66,7 +65,11 @@ public class DialogManager {
      * @return the constructed dialog
      */
     public Dialog createLoginDialogForAudience(String playerName) {
-        return loginBuilder.construct(null);
+        return createLoginDialogForAudience(playerName, (String) null);
+    }
+
+    public Dialog createLoginDialogForAudience(String playerName, String localeTag) {
+        return loginBuilder.constructForLocale(localeTag);
     }
 
     /**
@@ -77,7 +80,11 @@ public class DialogManager {
      * @return the constructed dialog
      */
     public Dialog createLoginDialogForAudience(String playerName, Component errorMessage) {
-        return loginBuilder.construct(null, errorMessage);
+        return createLoginDialogForAudience(playerName, null, errorMessage);
+    }
+
+    public Dialog createLoginDialogForAudience(String playerName, String localeTag, Component errorMessage) {
+        return loginBuilder.constructForLocale(localeTag, errorMessage);
     }
 
     /**
@@ -87,7 +94,11 @@ public class DialogManager {
      * @return the constructed dialog
      */
     public Dialog createRegistrationDialogForAudience(String playerName) {
-        return registerBuilder.construct(null);
+        return createRegistrationDialogForAudience(playerName, (String) null);
+    }
+
+    public Dialog createRegistrationDialogForAudience(String playerName, String localeTag) {
+        return registerBuilder.constructForLocale(localeTag);
     }
 
     /**
@@ -98,7 +109,11 @@ public class DialogManager {
      * @return the constructed dialog
      */
     public Dialog createRegistrationDialogForAudience(String playerName, Component errorMessage) {
-        return registerBuilder.construct(null, errorMessage);
+        return createRegistrationDialogForAudience(playerName, null, errorMessage);
+    }
+
+    public Dialog createRegistrationDialogForAudience(String playerName, String localeTag, Component errorMessage) {
+        return registerBuilder.constructForLocale(localeTag, errorMessage);
     }
 
     /**
@@ -108,7 +123,11 @@ public class DialogManager {
      * @return the constructed dialog
      */
     public Dialog createRulesDialogForAudience(String playerName) {
-        return rulesBuilder.construct(null);
+        return createRulesDialogForAudience(playerName, null);
+    }
+
+    public Dialog createRulesDialogForAudience(String playerName, String localeTag) {
+        return rulesBuilder.constructForLocale(localeTag);
     }
 
     // ==================== Builder accessors ====================

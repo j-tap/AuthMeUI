@@ -1,0 +1,58 @@
+login-dialog:
+  title: "<white><bold>Welcome Back!</bold></white>"
+  body:
+    - "<gray>Please enter your password to continue.</gray>"
+    - "<dark_gray>If you forgot your password, contact staff.</dark_gray>"
+  password-label: "Password"
+  submit-button: "<green>Sign In</green>"
+
+register-dialog:
+  title: "<white><bold>Create Account</bold></white>"
+  body:
+    - "<gray>Welcome! Create a secure password below.</gray>"
+    - "<dark_gray>Your password protects your progress.</dark_gray>"
+  password-label: "Password"
+  confirm-label: "Confirm Password"
+  submit-button: "<green>Register</green>"
+
+rules-dialog:
+  title: "<white><bold>Server Rules</bold></white>"
+  body:
+    - "<yellow><bold>Please read and accept our rules:</bold></yellow>"
+    - ""
+    - "<gray>1. No cheating, hacking, or exploits</gray>"
+    - "<gray>2. Be respectful to all players</gray>"
+    - "<gray>3. No advertising or spam</gray>"
+    - "<gray>4. Follow staff instructions</gray>"
+    - "<gray>5. Have fun and play fair!</gray>"
+    - ""
+    - "<dark_gray>Click confirm to accept and continue.</dark_gray>"
+  agreement:
+    label: "<gray>I have read and agree to the server rules</gray>"
+  confirm-button: "<green>I Accept</green>"
+
+messages:
+  login:
+    password-empty: "<red>Please enter your password!</red>"
+    password-incorrect: "<red>Incorrect password. Please try again.</red>"
+    not-registered: "<yellow>You don't have an account. Please register first!</yellow>"
+    success: "<green>Successfully logged in! Welcome back.</green>"
+  register:
+    fields-empty: "<red>Please fill in both password fields!</red>"
+    passwords-mismatch: "<red>Passwords do not match. Please try again.</red>"
+    password-too-short: "<red>Password must be at least <white>%min%</white> characters!</red>"
+    password-too-long: "<red>Password cannot exceed <white>%max%</white> characters!</red>"
+    password-invalid: "<red>Invalid password format. Please try again.</red>"
+    already-registered: "<yellow>You already have an account. Please login instead!</yellow>"
+    failed: "<red>Registration failed. Please try again.</red>"
+    success: "<green>Account created successfully! Welcome!</green>"
+  rules:
+    must-accept: "<red>You must accept the rules to continue!</red>"
+  commands:
+    no-permission: "<red>You don't have permission to do that!</red>"
+    player-only: "<red>This command can only be used by players!</red>"
+    authme-unavailable: "<red>AuthMe is not available!</red>"
+    config-reloaded: "<green>AuthMeUI configuration reloaded successfully!</green>"
+    usage: "<yellow>Usage: /%command% show <login|register> | reload</yellow>"
+    dialog-opened: "<gray>Dialog opened.</gray>"
+    invalid-dialog: "<yellow>Invalid dialog type. Use: login or register</yellow>"
