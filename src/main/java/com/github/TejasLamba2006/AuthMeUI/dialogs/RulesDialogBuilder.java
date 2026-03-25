@@ -1,6 +1,5 @@
 package com.github.TejasLamba2006.AuthMeUI.dialogs;
 
-import com.github.TejasLamba2006.AuthMeUI.AuthMeUIPlugin;
 import com.github.TejasLamba2006.AuthMeUI.configuration.SettingsManager;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -19,20 +18,22 @@ import java.util.List;
 
 public class RulesDialogBuilder {
 
-    private final AuthMeUIPlugin plugin;
     private final SettingsManager settings;
 
-    public RulesDialogBuilder(AuthMeUIPlugin plugin, SettingsManager settings) {
-        this.plugin = plugin;
+    public RulesDialogBuilder(SettingsManager settings) {
         this.settings = settings;
     }
 
     public Dialog construct(Player player) {
-        List<DialogBody> contentSections = buildBodyContent();
-        List<DialogInput> inputFields = buildInputFields();
-        ActionButton confirmButton = buildConfirmButton();
+        return constructForLocale(settings.extractLocaleTag(player));
+    }
 
-        DialogBase dialogBase = DialogBase.builder(settings.getRulesTitle())
+    public Dialog constructForLocale(String localeTag) {
+        List<DialogBody> contentSections = buildBodyContent(localeTag);
+        List<DialogInput> inputFields = buildInputFields(localeTag);
+        ActionButton confirmButton = buildConfirmButton(localeTag);
+
+        DialogBase dialogBase = DialogBase.builder(settings.getRulesTitle(localeTag))
                 .canCloseWithEscape(settings.canCloseWithEscape())
                 .afterAction(DialogAfterAction.CLOSE)
                 .body(contentSections)
@@ -49,10 +50,10 @@ public class RulesDialogBuilder {
         });
     }
 
-    private List<DialogBody> buildBodyContent() {
+    private List<DialogBody> buildBodyContent(String localeTag) {
         List<DialogBody> content = new ArrayList<>();
 
-        for (String line : settings.getRulesBodyRaw()) {
+        for (String line : settings.getRulesBodyRaw(localeTag)) {
             content.add(DialogBody.plainMessage(settings.parseText(line)));
         }
 
@@ -63,12 +64,12 @@ public class RulesDialogBuilder {
         return content;
     }
 
-    private List<DialogInput> buildInputFields() {
+    private List<DialogInput> buildInputFields(String localeTag) {
         List<DialogInput> inputs = new ArrayList<>();
 
         if (settings.isAgreementRequired()) {
             inputs.add(
-                    DialogInput.bool(settings.getAgreementKey(), settings.getAgreementLabel())
+                    DialogInput.bool(settings.getAgreementKey(), settings.getAgreementLabel(localeTag))
                             .initial(false)
                             .build());
         }
@@ -76,8 +77,8 @@ public class RulesDialogBuilder {
         return inputs;
     }
 
-    private ActionButton buildConfirmButton() {
-        return ActionButton.builder(settings.getRulesConfirmButton())
+    private ActionButton buildConfirmButton(String localeTag) {
+        return ActionButton.builder(settings.getRulesConfirmButton(localeTag))
                 .action(DialogAction.customClick(DialogIdentifiers.RULES_CONFIRM, null))
                 .build();
     }

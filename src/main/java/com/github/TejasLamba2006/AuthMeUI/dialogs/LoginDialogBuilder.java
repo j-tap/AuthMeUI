@@ -1,6 +1,5 @@
 package com.github.TejasLamba2006.AuthMeUI.dialogs;
 
-import com.github.TejasLamba2006.AuthMeUI.AuthMeUIPlugin;
 import com.github.TejasLamba2006.AuthMeUI.configuration.SettingsManager;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -34,16 +33,24 @@ public class LoginDialogBuilder {
     }
 
     public Dialog construct(Player player, Component errorNotice) {
-        List<DialogBody> contentSections = buildBodyContent();
+        return constructForLocale(settings.extractLocaleTag(player), errorNotice);
+    }
+
+    public Dialog constructForLocale(String localeTag) {
+        return constructForLocale(localeTag, null);
+    }
+
+    public Dialog constructForLocale(String localeTag, Component errorNotice) {
+        List<DialogBody> contentSections = buildBodyContent(localeTag);
 
         if (errorNotice != null) {
             contentSections.add(DialogBody.plainMessage(errorNotice));
         }
 
-        TextDialogInput passwordField = createPasswordInput();
-        List<ActionButton> actionButtons = buildActionButtons();
+        TextDialogInput passwordField = createPasswordInput(localeTag);
+        List<ActionButton> actionButtons = buildActionButtons(localeTag);
 
-        DialogBase dialogBase = DialogBase.builder(settings.getLoginTitle())
+        DialogBase dialogBase = DialogBase.builder(settings.getLoginTitle(localeTag))
                 .canCloseWithEscape(settings.canCloseWithEscape())
                 .afterAction(DialogAfterAction.CLOSE)
                 .body(contentSections)
@@ -57,10 +64,10 @@ public class LoginDialogBuilder {
         });
     }
 
-    private List<DialogBody> buildBodyContent() {
+    private List<DialogBody> buildBodyContent(String localeTag) {
         List<DialogBody> content = new ArrayList<>();
 
-        for (String line : settings.getLoginBodyRaw()) {
+        for (String line : settings.getLoginBodyRaw(localeTag)) {
             content.add(DialogBody.plainMessage(settings.parseText(line)));
         }
 
@@ -71,8 +78,8 @@ public class LoginDialogBuilder {
         return content;
     }
 
-    private TextDialogInput createPasswordInput() {
-        return DialogInput.text(PASSWORD_INPUT_KEY, settings.getLoginPasswordLabel())
+    private TextDialogInput createPasswordInput(String localeTag) {
+        return DialogInput.text(PASSWORD_INPUT_KEY, settings.getLoginPasswordLabel(localeTag))
                 .width(settings.getInputWidth())
                 .labelVisible(true)
                 .maxLength(MAX_PASSWORD_INPUT_LENGTH)
@@ -80,11 +87,11 @@ public class LoginDialogBuilder {
                 .build();
     }
 
-    private List<ActionButton> buildActionButtons() {
-        ActionButton submitButton = ActionButton.builder(settings.getLoginSubmitButton())
+    private List<ActionButton> buildActionButtons(String localeTag) {
+        ActionButton submitButton = ActionButton.builder(settings.getLoginSubmitButton(localeTag))
                 .action(DialogAction.customClick(DialogIdentifiers.LOGIN_SUBMIT, null))
                 .build();
 
-        return settings.buildActionButtons("login-dialog", submitButton);
+        return settings.buildActionButtons("login-dialog", submitButton, localeTag);
     }
 }

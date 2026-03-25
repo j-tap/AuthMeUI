@@ -22,6 +22,7 @@ AuthMeUI replaces the traditional chat-based login and registration prompts with
 - **Rules Dialog** - Display server rules players must accept before playing
 - **Configuration Phase Support** - Show authentication dialogs BEFORE players join the server (blocking authentication)
 - **Fully Customizable** - Every message, button, and title can be configured
+- **Multilingual Support** - Per-player language selection with automatic locale detection
 - **PlaceholderAPI Support** - Use any placeholder in your dialog text
 - **MiniMessage Formatting** - Full support for colors, gradients, and formatting
 - **Universal AuthMe Support** - Works with all AuthMe forks out of the box
@@ -101,6 +102,24 @@ AuthMeUI is compatible with all major AuthMe forks:
 | `authmeui.show` | OP | Show dialogs to other players |
 
 ## Configuration
+
+### Localization
+
+AuthMeUI supports per-player localization. By default, it auto-detects the language from the Minecraft client locale and falls back to `en`.
+
+1. Set default language in `plugins/AuthMeUI/config.yml`:
+
+```yaml
+localization:
+  default-language: "en"
+  auto-detect-player-locale: true
+  prune-legacy-config: false
+```
+
+2. Add translation files in `plugins/AuthMeUI/translations/` (e.g. `ru.yml`, `de.yml`).
+3. Reload plugin with `/authmeui reload`.
+4. If you upgraded from an older version, old text keys from `config.yml` are migrated into `translations/en.yml` automatically.
+   Set `localization.prune-legacy-config: true` once to remove migrated text keys from config (a backup file is created first).
 
 ```yaml
 # Dialog Settings
