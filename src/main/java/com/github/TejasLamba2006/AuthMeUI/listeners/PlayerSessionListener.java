@@ -134,11 +134,18 @@ public class PlayerSessionListener implements Listener {
             return;
         }
 
+        if (forcedByPreLogin) {
+            if (dialogShownInSession.add(playerId)) {
+                boolean hasAccount = authBridge.isPlayerRegistered(targetPlayer.getName());
+                dialogManager.presentAuthDialog(targetPlayer, hasAccount);
+            }
+            cancelPendingTask(playerId);
+            return;
+        }
+
         boolean authenticated = authBridge.isPlayerAuthenticated(targetPlayer);
         if (authenticated) {
-            if (!forcedByPreLogin) {
-                cancelPendingTask(playerId);
-            }
+            cancelPendingTask(playerId);
             return;
         }
 
