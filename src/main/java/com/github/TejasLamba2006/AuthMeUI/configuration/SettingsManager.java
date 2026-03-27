@@ -3,10 +3,14 @@ package com.github.TejasLamba2006.AuthMeUI.configuration;
 import com.github.TejasLamba2006.AuthMeUI.AuthMeUIPlugin;
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.PluginManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class SettingsManager {
@@ -101,11 +106,15 @@ public class SettingsManager {
     }
 
     public Component getLoginTitle(Player player) {
-        return getLoginTitle(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "login-dialog.title"), player);
     }
 
     public Component getLoginTitle(String localeTag) {
         return parseText(getLocalizedString(localeTag, "login-dialog.title"));
+    }
+
+    public Component getLoginTitle(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "login-dialog.title"), placeholderTarget);
     }
 
     public List<String> getLoginBodyRaw() {
@@ -125,11 +134,15 @@ public class SettingsManager {
     }
 
     public Component getLoginPasswordLabel(Player player) {
-        return getLoginPasswordLabel(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "login-dialog.password-label"), player);
     }
 
     public Component getLoginPasswordLabel(String localeTag) {
         return parseText(getLocalizedString(localeTag, "login-dialog.password-label"));
+    }
+
+    public Component getLoginPasswordLabel(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "login-dialog.password-label"), placeholderTarget);
     }
 
     public Component getLoginSubmitButton() {
@@ -137,11 +150,15 @@ public class SettingsManager {
     }
 
     public Component getLoginSubmitButton(Player player) {
-        return getLoginSubmitButton(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "login-dialog.submit-button"), player);
     }
 
     public Component getLoginSubmitButton(String localeTag) {
         return parseText(getLocalizedString(localeTag, "login-dialog.submit-button"));
+    }
+
+    public Component getLoginSubmitButton(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "login-dialog.submit-button"), placeholderTarget);
     }
 
     public Component getRegisterTitle() {
@@ -149,11 +166,15 @@ public class SettingsManager {
     }
 
     public Component getRegisterTitle(Player player) {
-        return getRegisterTitle(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "register-dialog.title"), player);
     }
 
     public Component getRegisterTitle(String localeTag) {
         return parseText(getLocalizedString(localeTag, "register-dialog.title"));
+    }
+
+    public Component getRegisterTitle(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.title"), placeholderTarget);
     }
 
     public List<String> getRegisterBodyRaw() {
@@ -173,11 +194,15 @@ public class SettingsManager {
     }
 
     public Component getRegisterPasswordLabel(Player player) {
-        return getRegisterPasswordLabel(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "register-dialog.password-label"), player);
     }
 
     public Component getRegisterPasswordLabel(String localeTag) {
         return parseText(getLocalizedString(localeTag, "register-dialog.password-label"));
+    }
+
+    public Component getRegisterPasswordLabel(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.password-label"), placeholderTarget);
     }
 
     public Component getRegisterConfirmLabel() {
@@ -185,11 +210,15 @@ public class SettingsManager {
     }
 
     public Component getRegisterConfirmLabel(Player player) {
-        return getRegisterConfirmLabel(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "register-dialog.confirm-label"), player);
     }
 
     public Component getRegisterConfirmLabel(String localeTag) {
         return parseText(getLocalizedString(localeTag, "register-dialog.confirm-label"));
+    }
+
+    public Component getRegisterConfirmLabel(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.confirm-label"), placeholderTarget);
     }
 
     public Component getRegisterSubmitButton() {
@@ -197,11 +226,15 @@ public class SettingsManager {
     }
 
     public Component getRegisterSubmitButton(Player player) {
-        return getRegisterSubmitButton(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "register-dialog.submit-button"), player);
     }
 
     public Component getRegisterSubmitButton(String localeTag) {
         return parseText(getLocalizedString(localeTag, "register-dialog.submit-button"));
+    }
+
+    public Component getRegisterSubmitButton(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "register-dialog.submit-button"), placeholderTarget);
     }
 
     public boolean isRulesDialogEnabled() {
@@ -213,11 +246,15 @@ public class SettingsManager {
     }
 
     public Component getRulesTitle(Player player) {
-        return getRulesTitle(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "rules-dialog.title"), player);
     }
 
     public Component getRulesTitle(String localeTag) {
         return parseText(getLocalizedString(localeTag, "rules-dialog.title"));
+    }
+
+    public Component getRulesTitle(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "rules-dialog.title"), placeholderTarget);
     }
 
     public List<String> getRulesBodyRaw() {
@@ -246,11 +283,15 @@ public class SettingsManager {
     }
 
     public Component getAgreementLabel(Player player) {
-        return getAgreementLabel(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "rules-dialog.agreement.label"), player);
     }
 
     public Component getAgreementLabel(String localeTag) {
         return parseText(getLocalizedString(localeTag, "rules-dialog.agreement.label"));
+    }
+
+    public Component getAgreementLabel(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "rules-dialog.agreement.label"), placeholderTarget);
     }
 
     public Component getRulesConfirmButton() {
@@ -258,11 +299,15 @@ public class SettingsManager {
     }
 
     public Component getRulesConfirmButton(Player player) {
-        return getRulesConfirmButton(resolveLocaleTag(player));
+        return parseText(getLocalizedString(resolveLocaleTag(player), "rules-dialog.confirm-button"), player);
     }
 
     public Component getRulesConfirmButton(String localeTag) {
         return parseText(getLocalizedString(localeTag, "rules-dialog.confirm-button"));
+    }
+
+    public Component getRulesConfirmButton(String localeTag, OfflinePlayer placeholderTarget) {
+        return parseText(getLocalizedString(localeTag, "rules-dialog.confirm-button"), placeholderTarget);
     }
 
     public boolean isMetricsEnabled() {
@@ -278,7 +323,8 @@ public class SettingsManager {
     }
 
     public Component getMessage(Player player, String path) {
-        return getMessage(resolveLocaleTag(player), path);
+        String raw = getLocalizedString(resolveLocaleTag(player), "messages." + path);
+        return parseText(raw, player);
     }
 
     public Component getMessage(String localeTag, String path) {
@@ -286,28 +332,41 @@ public class SettingsManager {
         return parseText(raw);
     }
 
+    public Component getMessage(String localeTag, String path, OfflinePlayer placeholderTarget) {
+        String raw = getLocalizedString(localeTag, "messages." + path);
+        return parseText(raw, placeholderTarget);
+    }
+
     public Component getMessage(String path, Map<String, String> replacements) {
         return getMessage((String) null, path, replacements);
     }
 
     public Component getMessage(Player player, String path, Map<String, String> replacements) {
-        return getMessage(resolveLocaleTag(player), path, replacements);
+        String raw = getLocalizedString(resolveLocaleTag(player), "messages." + path);
+        return parseText(applyReplacements(raw, replacements), player);
     }
 
     public Component getMessage(String localeTag, String path, Map<String, String> replacements) {
         String raw = getLocalizedString(localeTag, "messages." + path);
+        return parseText(applyReplacements(raw, replacements));
+    }
 
-        if (replacements != null) {
-            for (Map.Entry<String, String> entry : replacements.entrySet()) {
-                raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
-            }
-        }
-
-        return parseText(raw);
+    public Component getMessage(
+            String localeTag,
+            String path,
+            OfflinePlayer placeholderTarget,
+            Map<String, String> replacements) {
+        String raw = getLocalizedString(localeTag, "messages." + path);
+        return parseText(applyReplacements(raw, replacements), placeholderTarget);
     }
 
     public Component parseText(String raw) {
         return miniMessage.deserialize(raw != null ? raw : "");
+    }
+
+    public Component parseText(String raw, OfflinePlayer placeholderTarget) {
+        String sanitized = raw != null ? raw : "";
+        return miniMessage.deserialize(applyPlaceholderApi(sanitized, placeholderTarget));
     }
 
     public List<ActionButton> buildActionButtons(String configSection, ActionButton primaryAction) {
@@ -315,10 +374,18 @@ public class SettingsManager {
     }
 
     public List<ActionButton> buildActionButtons(String configSection, ActionButton primaryAction, Player player) {
-        return buildActionButtons(configSection, primaryAction, resolveLocaleTag(player));
+        return buildActionButtons(configSection, primaryAction, resolveLocaleTag(player), player);
     }
 
     public List<ActionButton> buildActionButtons(String configSection, ActionButton primaryAction, String localeTag) {
+        return buildActionButtons(configSection, primaryAction, localeTag, null);
+    }
+
+    public List<ActionButton> buildActionButtons(
+            String configSection,
+            ActionButton primaryAction,
+            String localeTag,
+            OfflinePlayer placeholderTarget) {
         List<ActionButton> buttons = new ArrayList<>();
         List<Map<?, ?>> rawActions = config.getMapList(configSection + ".actions");
 
@@ -333,7 +400,7 @@ public class SettingsManager {
                         localeTag,
                         configSection + ".actions." + actionIndex + ".label",
                         labelText);
-                Component label = miniMessage.deserialize(localizedLabel);
+                Component label = parseText(localizedLabel, placeholderTarget);
 
                 switch (type) {
                     case "submit" -> {
@@ -389,6 +456,41 @@ public class SettingsManager {
         } catch (ReflectiveOperationException ignored) {
             return null;
         }
+    }
+
+    private String applyReplacements(String raw, Map<String, String> replacements) {
+        if (replacements == null || replacements.isEmpty()) {
+            return raw;
+        }
+
+        String result = raw;
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            result = result.replace("%" + entry.getKey() + "%", Objects.toString(entry.getValue(), ""));
+        }
+        return result;
+    }
+
+    private String applyPlaceholderApi(String raw, OfflinePlayer placeholderTarget) {
+        if (placeholderTarget == null || !isPlaceholderApiEnabled()) {
+            return raw;
+        }
+
+        if (Bukkit.isPrimaryThread()) {
+            return PlaceholderAPI.setPlaceholders(placeholderTarget, raw);
+        }
+
+        try {
+            return Bukkit.getScheduler()
+                    .callSyncMethod(plugin, () -> PlaceholderAPI.setPlaceholders(placeholderTarget, raw))
+                    .get(2, TimeUnit.SECONDS);
+        } catch (Exception exception) {
+            return raw;
+        }
+    }
+
+    private boolean isPlaceholderApiEnabled() {
+        PluginManager pluginManager = plugin.getServer().getPluginManager();
+        return pluginManager.isPluginEnabled("PlaceholderAPI");
     }
 
     private void migrateLegacyTextConfig() {

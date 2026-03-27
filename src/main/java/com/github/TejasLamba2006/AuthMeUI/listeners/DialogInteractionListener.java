@@ -16,6 +16,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -106,41 +107,47 @@ public class DialogInteractionListener implements Listener {
             return;
         }
 
+        OfflinePlayer placeholderTarget = Bukkit.getOfflinePlayer(uniqueId);
+
         if (actionKey.equals(DialogIdentifiers.LOGIN_SUBMIT)) {
-            handleConfigPhaseLogin(connection, uniqueId, playerName, localeTag, audience, responseView);
+            handleConfigPhaseLogin(uniqueId, playerName, localeTag, placeholderTarget, audience, responseView);
         } else if (actionKey.equals(DialogIdentifiers.REGISTER_SUBMIT)) {
-            handleConfigPhaseRegistration(connection, uniqueId, playerName, localeTag, audience, responseView);
+            handleConfigPhaseRegistration(uniqueId, playerName, localeTag, placeholderTarget, audience, responseView);
         } else if (actionKey.equals(DialogIdentifiers.RULES_CONFIRM)) {
-            handleConfigPhaseRulesConfirmation(connection, uniqueId, playerName, localeTag, audience, responseView);
+            handleConfigPhaseRulesConfirmation(playerName, localeTag, placeholderTarget, audience, responseView);
         }
     }
 
     private void handleConfigPhaseLogin(
-            PlayerConfigurationConnection connection,
             UUID uniqueId,
             String playerName,
             String localeTag,
+            OfflinePlayer placeholderTarget,
             Audience audience,
             DialogResponseView response) {
 
         String enteredPassword = response.getText(PASSWORD_FIELD);
 
         if (isNullOrEmpty(enteredPassword)) {
-            Component error = settings.getMessage(localeTag, "login.password-empty");
-            audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
+            Component error = settings.getMessage(localeTag, "login.password-empty", placeholderTarget);
+            audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget, error));
             return;
         }
 
         if (!authBridge.isPlayerRegistered(playerName)) {
-            Component error = settings.getMessage(localeTag, "login.not-registered");
+            Component error = settings.getMessage(localeTag, "login.not-registered", placeholderTarget);
             // Show registration dialog instead
             if (configPhaseListener != null) {
                 configPhaseListener.updateRegistrationStatus(uniqueId, false);
             }
             if (settings.isRulesDialogEnabled()) {
-                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName, localeTag));
+                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName, localeTag, placeholderTarget));
             } else {
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
             }
             return;
         }
@@ -156,28 +163,32 @@ public class DialogInteractionListener implements Listener {
                 }
             }
             case INVALID_PASSWORD -> {
-                Component error = settings.getMessage(localeTag, "login.password-incorrect");
-                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
+                Component error = settings.getMessage(localeTag, "login.password-incorrect", placeholderTarget);
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget, error));
             }
             case NOT_REGISTERED -> {
-                Component error = settings.getMessage(localeTag, "login.not-registered");
+                Component error = settings.getMessage(localeTag, "login.not-registered", placeholderTarget);
                 if (configPhaseListener != null) {
                     configPhaseListener.updateRegistrationStatus(uniqueId, false);
                 }
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
             }
             default -> {
-                Component error = settings.getMessage(localeTag, "login.password-incorrect");
-                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
+                Component error = settings.getMessage(localeTag, "login.password-incorrect", placeholderTarget);
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget, error));
             }
         }
     }
 
     private void handleConfigPhaseRegistration(
-            PlayerConfigurationConnection connection,
             UUID uniqueId,
             String playerName,
             String localeTag,
+            OfflinePlayer placeholderTarget,
             Audience audience,
             DialogResponseView response) {
 
@@ -185,8 +196,12 @@ public class DialogInteractionListener implements Listener {
         String confirmPassword = response.getText(CONFIRM_FIELD);
 
         if (isNullOrEmpty(enteredPassword) || isNullOrEmpty(confirmPassword)) {
-            Component error = settings.getMessage(localeTag, "register.fields-empty");
-            audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+            Component error = settings.getMessage(localeTag, "register.fields-empty", placeholderTarget);
+            audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                    playerName,
+                    localeTag,
+                    placeholderTarget,
+                    error));
             return;
         }
 
@@ -201,44 +216,63 @@ public class DialogInteractionListener implements Listener {
                 }
             }
             case ALREADY_EXISTS -> {
-                Component error = settings.getMessage(localeTag, "register.already-registered");
+                Component error = settings.getMessage(localeTag, "register.already-registered", placeholderTarget);
                 if (configPhaseListener != null) {
                     configPhaseListener.updateRegistrationStatus(uniqueId, true);
                 }
-                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, error));
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget, error));
             }
             case PASSWORD_MISMATCH -> {
-                Component error = settings.getMessage(localeTag, "register.passwords-mismatch");
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+                Component error = settings.getMessage(localeTag, "register.passwords-mismatch", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
             }
             case PASSWORD_TOO_SHORT -> {
                 int minLength = authBridge.fetchMinPasswordLength();
                 Component error = settings.getMessage(localeTag, "register.password-too-short",
-                        Map.of("min", String.valueOf(minLength)));
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+                        placeholderTarget, Map.of("min", String.valueOf(minLength)));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
             }
             case PASSWORD_TOO_LONG -> {
                 int maxLength = authBridge.fetchMaxPasswordLength();
                 Component error = settings.getMessage(localeTag, "register.password-too-long",
-                        Map.of("max", String.valueOf(maxLength)));
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+                        placeholderTarget, Map.of("max", String.valueOf(maxLength)));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
             }
             case INVALID_PASSWORD -> {
-                Component error = settings.getMessage(localeTag, "register.password-invalid");
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+                Component error = settings.getMessage(localeTag, "register.password-invalid", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
             }
             default -> {
-                Component error = settings.getMessage(localeTag, "register.failed");
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, error));
+                Component error = settings.getMessage(localeTag, "register.failed", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
             }
         }
     }
 
     private void handleConfigPhaseRulesConfirmation(
-            PlayerConfigurationConnection connection,
-            UUID uniqueId,
             String playerName,
             String localeTag,
+            OfflinePlayer placeholderTarget,
             Audience audience,
             DialogResponseView response) {
 
@@ -247,13 +281,13 @@ public class DialogInteractionListener implements Listener {
 
             if (hasAgreed == null || !hasAgreed) {
                 // Re-show the rules dialog
-                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName, localeTag));
+                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName, localeTag, placeholderTarget));
                 return;
             }
         }
 
         // Show registration dialog
-        audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag));
+        audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName, localeTag, placeholderTarget));
     }
 
     // ==================== In-Game Handlers ====================
@@ -382,8 +416,16 @@ public class DialogInteractionListener implements Listener {
     }
 
     private String extractLocaleTag(PlayerConfigurationConnection connection) {
+        String locale = tryExtractLocale(connection, "locale");
+        if (locale != null && !locale.isBlank()) {
+            return locale;
+        }
+        return tryExtractLocale(connection, "getLocale");
+    }
+
+    private String tryExtractLocale(PlayerConfigurationConnection connection, String methodName) {
         try {
-            Method localeMethod = connection.getClass().getMethod("locale");
+            Method localeMethod = connection.getClass().getMethod(methodName);
             Object localeValue = localeMethod.invoke(connection);
             return Objects.toString(localeValue, null);
         } catch (ReflectiveOperationException ignored) {

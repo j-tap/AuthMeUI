@@ -9,6 +9,8 @@ import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConf
 import com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -16,7 +18,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerJoinEvent;
 
+import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -104,15 +108,20 @@ public class ConfigurationPhaseListener implements Listener {
         pendingAuthentications.put(uniqueId, authFuture);
 
         Audience audience = connection.getAudience();
+        String localeTag = extractLocaleTag(connection);
+        OfflinePlayer placeholderTarget = Bukkit.getOfflinePlayer(uniqueId);
 
         // Show the appropriate dialog
         if (isRegistered) {
-            audience.showDialog(dialogManager.createLoginDialogForAudience(playerName));
+            audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget));
         } else {
             if (settings.isRulesDialogEnabled()) {
-                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName));
+                audience.showDialog(dialogManager.createRulesDialogForAudience(playerName, localeTag, placeholderTarget));
             } else {
-                audience.showDialog(dialogManager.createRegistrationDialogForAudience(playerName));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget));
             }
         }
 
@@ -200,5 +209,23 @@ public class ConfigurationPhaseListener implements Listener {
      */
     public Map<UUID, CompletableFuture<Boolean>> getPendingAuthentications() {
         return pendingAuthentications;
+    }
+
+    private String extractLocaleTag(PlayerConfigurationConnection connection) {
+        String locale = tryExtractLocale(connection, "locale");
+        if (locale != null && !locale.isBlank()) {
+            return locale;
+        }
+        return tryExtractLocale(connection, "getLocale");
+    }
+
+    private String tryExtractLocale(PlayerConfigurationConnection connection, String methodName) {
+        try {
+            Method localeMethod = connection.getClass().getMethod(methodName);
+            Object localeValue = localeMethod.invoke(connection);
+            return Objects.toString(localeValue, null);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
     }
 }
