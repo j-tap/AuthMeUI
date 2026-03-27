@@ -96,9 +96,8 @@ public class PlayerSessionListener implements Listener {
             cancelPendingTask(playerId);
             return;
         }
-        if (authBridge.isPlayerAuthenticated(targetPlayer)) {
-            dialogShownInSession.remove(playerId);
-            cancelPendingTask(playerId);
+        boolean authenticated = authBridge.isPlayerAuthenticated(targetPlayer);
+        if (authenticated) {
             return;
         }
         if (!dialogShownInSession.add(playerId)) {
