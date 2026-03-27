@@ -4,6 +4,21 @@ All notable changes to AuthMeUI will be documented in this file.
 
 ---
 
+## [1.2.1] - 2026-03-27
+
+### PlaceholderAPI support
+
+- Added PlaceholderAPI resolution for translated dialog text and `messages.*`.
+- PAPI placeholders are resolved with player context in-game and in configuration phase dialogs (using UUID-bound offline player context).
+- Placeholder resolution remains safe when dialog flow runs from async contexts.
+
+### Localization consistency
+
+- Preserved per-player locale behavior from the multilingual system.
+- Improved locale extraction fallback for configuration-phase connections to keep client language detection stable.
+
+---
+
 ## [1.2.0] - 2026-03-24
 
 ### Multilingual support (i18n)

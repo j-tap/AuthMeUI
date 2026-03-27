@@ -11,6 +11,7 @@ import io.papermc.paper.registry.data.dialog.body.DialogBody;
 import io.papermc.paper.registry.data.dialog.input.DialogInput;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
 import net.kyori.adventure.text.Component;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -25,15 +26,11 @@ public class RulesDialogBuilder {
     }
 
     public Dialog construct(Player player) {
-        return constructForLocale(settings.extractLocaleTag(player));
-    }
+        List<DialogBody> contentSections = buildBodyContent(player);
+        List<DialogInput> inputFields = buildInputFields(player);
+        ActionButton confirmButton = buildConfirmButton(player);
 
-    public Dialog constructForLocale(String localeTag) {
-        List<DialogBody> contentSections = buildBodyContent(localeTag);
-        List<DialogInput> inputFields = buildInputFields(localeTag);
-        ActionButton confirmButton = buildConfirmButton(localeTag);
-
-        DialogBase dialogBase = DialogBase.builder(settings.getRulesTitle(localeTag))
+        DialogBase dialogBase = DialogBase.builder(settings.getRulesTitle(player))
                 .canCloseWithEscape(settings.canCloseWithEscape())
                 .afterAction(DialogAfterAction.CLOSE)
                 .body(contentSections)
@@ -50,11 +47,37 @@ public class RulesDialogBuilder {
         });
     }
 
-    private List<DialogBody> buildBodyContent(String localeTag) {
+    public Dialog constructForLocale(String localeTag) {
+        return constructForLocale(localeTag, null);
+    }
+
+    public Dialog constructForLocale(String localeTag, OfflinePlayer placeholderTarget) {
+        List<DialogBody> contentSections = buildBodyContent(localeTag, placeholderTarget);
+        List<DialogInput> inputFields = buildInputFields(localeTag, placeholderTarget);
+        ActionButton confirmButton = buildConfirmButton(localeTag, placeholderTarget);
+
+        DialogBase dialogBase = DialogBase.builder(settings.getRulesTitle(localeTag, placeholderTarget))
+                .canCloseWithEscape(settings.canCloseWithEscape())
+                .afterAction(DialogAfterAction.CLOSE)
+                .body(contentSections)
+                .inputs(inputFields)
+                .build();
+
+        return Dialog.create(builder -> {
+            ((Builder) builder.empty())
+                    .base(dialogBase)
+                    .type(DialogType.multiAction(
+                            List.of(confirmButton),
+                            null,
+                            settings.getButtonColumns()));
+        });
+    }
+
+    private List<DialogBody> buildBodyContent(String localeTag, OfflinePlayer placeholderTarget) {
         List<DialogBody> content = new ArrayList<>();
 
         for (String line : settings.getRulesBodyRaw(localeTag)) {
-            content.add(DialogBody.plainMessage(settings.parseText(line)));
+            content.add(DialogBody.plainMessage(settings.parseText(line, placeholderTarget)));
         }
 
         if (content.isEmpty()) {
@@ -64,12 +87,26 @@ public class RulesDialogBuilder {
         return content;
     }
 
-    private List<DialogInput> buildInputFields(String localeTag) {
+    private List<DialogBody> buildBodyContent(Player player) {
+        List<DialogBody> content = new ArrayList<>();
+
+        for (String line : settings.getRulesBodyRaw(player)) {
+            content.add(DialogBody.plainMessage(settings.parseText(line, player)));
+        }
+
+        if (content.isEmpty()) {
+            content.add(DialogBody.plainMessage(Component.empty()));
+        }
+
+        return content;
+    }
+
+    private List<DialogInput> buildInputFields(String localeTag, OfflinePlayer placeholderTarget) {
         List<DialogInput> inputs = new ArrayList<>();
 
         if (settings.isAgreementRequired()) {
             inputs.add(
-                    DialogInput.bool(settings.getAgreementKey(), settings.getAgreementLabel(localeTag))
+                    DialogInput.bool(settings.getAgreementKey(), settings.getAgreementLabel(localeTag, placeholderTarget))
                             .initial(false)
                             .build());
         }
@@ -77,8 +114,27 @@ public class RulesDialogBuilder {
         return inputs;
     }
 
-    private ActionButton buildConfirmButton(String localeTag) {
-        return ActionButton.builder(settings.getRulesConfirmButton(localeTag))
+    private List<DialogInput> buildInputFields(Player player) {
+        List<DialogInput> inputs = new ArrayList<>();
+
+        if (settings.isAgreementRequired()) {
+            inputs.add(
+                    DialogInput.bool(settings.getAgreementKey(), settings.getAgreementLabel(player))
+                            .initial(false)
+                            .build());
+        }
+
+        return inputs;
+    }
+
+    private ActionButton buildConfirmButton(String localeTag, OfflinePlayer placeholderTarget) {
+        return ActionButton.builder(settings.getRulesConfirmButton(localeTag, placeholderTarget))
+                .action(DialogAction.customClick(DialogIdentifiers.RULES_CONFIRM, null))
+                .build();
+    }
+
+    private ActionButton buildConfirmButton(Player player) {
+        return ActionButton.builder(settings.getRulesConfirmButton(player))
                 .action(DialogAction.customClick(DialogIdentifiers.RULES_CONFIRM, null))
                 .build();
     }

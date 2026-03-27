@@ -3,6 +3,7 @@ package com.github.TejasLamba2006.AuthMeUI.dialogs;
 import com.github.TejasLamba2006.AuthMeUI.configuration.SettingsManager;
 import io.papermc.paper.dialog.Dialog;
 import net.kyori.adventure.text.Component;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 public class DialogManager {
@@ -72,6 +73,10 @@ public class DialogManager {
         return loginBuilder.constructForLocale(localeTag);
     }
 
+    public Dialog createLoginDialogForAudience(String playerName, String localeTag, OfflinePlayer placeholderTarget) {
+        return loginBuilder.constructForLocale(localeTag, placeholderTarget, null);
+    }
+
     /**
      * Create a login dialog with error message for use with Audience.
      *
@@ -87,6 +92,14 @@ public class DialogManager {
         return loginBuilder.constructForLocale(localeTag, errorMessage);
     }
 
+    public Dialog createLoginDialogForAudience(
+            String playerName,
+            String localeTag,
+            OfflinePlayer placeholderTarget,
+            Component errorMessage) {
+        return loginBuilder.constructForLocale(localeTag, placeholderTarget, errorMessage);
+    }
+
     /**
      * Create a registration dialog for use with Audience.
      *
@@ -99,6 +112,13 @@ public class DialogManager {
 
     public Dialog createRegistrationDialogForAudience(String playerName, String localeTag) {
         return registerBuilder.constructForLocale(localeTag);
+    }
+
+    public Dialog createRegistrationDialogForAudience(
+            String playerName,
+            String localeTag,
+            OfflinePlayer placeholderTarget) {
+        return registerBuilder.constructForLocale(localeTag, placeholderTarget, null);
     }
 
     /**
@@ -116,6 +136,14 @@ public class DialogManager {
         return registerBuilder.constructForLocale(localeTag, errorMessage);
     }
 
+    public Dialog createRegistrationDialogForAudience(
+            String playerName,
+            String localeTag,
+            OfflinePlayer placeholderTarget,
+            Component errorMessage) {
+        return registerBuilder.constructForLocale(localeTag, placeholderTarget, errorMessage);
+    }
+
     /**
      * Create a rules dialog for use with Audience.
      *
@@ -128,6 +156,10 @@ public class DialogManager {
 
     public Dialog createRulesDialogForAudience(String playerName, String localeTag) {
         return rulesBuilder.constructForLocale(localeTag);
+    }
+
+    public Dialog createRulesDialogForAudience(String playerName, String localeTag, OfflinePlayer placeholderTarget) {
+        return rulesBuilder.constructForLocale(localeTag, placeholderTarget);
     }
 
     // ==================== Builder accessors ====================
