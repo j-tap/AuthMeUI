@@ -12,11 +12,14 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 
+import fr.xephi.authme.events.AuthMeAsyncPreLoginEvent;
+import fr.xephi.authme.events.LoginEvent;
+import fr.xephi.authme.events.RestoreSessionEvent;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handles post-join authentication dialogs.
@@ -29,12 +32,29 @@ public class PlayerSessionListener implements Listener {
     private final AuthenticationBridge authBridge;
     private final DialogManager dialogManager;
     private final Set<UUID> dialogShownInSession = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> mustShowAuthDialogOnJoin = ConcurrentHashMap.newKeySet();
     private final Map<UUID, BukkitTask> pendingJoinTasks = new ConcurrentHashMap<>();
 
     public PlayerSessionListener(AuthMeUIPlugin plugin, AuthenticationBridge authBridge, DialogManager dialogManager) {
         this.plugin = plugin;
         this.authBridge = authBridge;
         this.dialogManager = dialogManager;
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onAuthMeAsyncPreLogin(AuthMeAsyncPreLoginEvent event) {
+        Player player = event.getPlayer();
+        if (player == null) {
+            return;
+        }
+
+        UUID playerId = player.getUniqueId();
+        if (!event.canLogin()) {
+            mustShowAuthDialogOnJoin.add(playerId);
+            return;
+        }
+
+        mustShowAuthDialogOnJoin.remove(playerId);
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -47,67 +67,68 @@ public class PlayerSessionListener implements Listener {
         }
 
         if (joiningPlayer.hasPermission("authmeui.bypass")) {
+            mustShowAuthDialogOnJoin.remove(playerId);
+            cancelPendingTask(playerId);
             return;
         }
 
-        long delayTicks = Math.max(0L, plugin.getSettingsManager().getPostJoinOpenDelayTicks());
-        long recheckInterval = Math.max(1L, plugin.getSettingsManager().getPostJoinOpenRecheckIntervalTicks());
-        int maxRechecks = Math.max(1, plugin.getSettingsManager().getPostJoinOpenMaxRechecks());
+        if (!mustShowAuthDialogOnJoin.remove(playerId)) {
+            cancelPendingTask(playerId);
+            return;
+        }
 
         cancelPendingTask(playerId);
 
-        AtomicInteger checksPerformed = new AtomicInteger(0);
-        BukkitTask pollTask = Bukkit.getScheduler().runTaskTimer(
+        long delayTicks = Math.max(0L, plugin.getSettingsManager().getPostJoinOpenDelayTicks());
+        BukkitTask pendingTask = Bukkit.getScheduler().runTaskLater(
                 plugin,
-                () -> performPollingCheck(joiningPlayer, checksPerformed, maxRechecks),
-                delayTicks,
-                recheckInterval);
-        pendingJoinTasks.put(playerId, pollTask);
+                () -> performPostJoinAuthCheck(joiningPlayer),
+                delayTicks);
+        pendingJoinTasks.put(playerId, pendingTask);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onLogin(LoginEvent event) {
+        clearSessionState(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRestoreSession(RestoreSessionEvent event) {
+        clearSessionState(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        UUID playerId = event.getPlayer().getUniqueId();
-        dialogShownInSession.remove(playerId);
-        cancelPendingTask(playerId);
+        clearSessionState(event.getPlayer().getUniqueId());
     }
 
     public void clearDialogShownState(UUID playerId) {
-        dialogShownInSession.remove(playerId);
+        clearSessionState(playerId);
     }
 
-    private void performPollingCheck(Player targetPlayer, AtomicInteger checksPerformed, int maxRechecks) {
+    private void performPostJoinAuthCheck(Player targetPlayer) {
         UUID playerId = targetPlayer.getUniqueId();
-        int currentAttempt = checksPerformed.incrementAndGet();
-        if (currentAttempt > maxRechecks) {
-            cancelPendingTask(playerId);
-            return;
-        }
+        pendingJoinTasks.remove(playerId);
 
         if (!targetPlayer.isOnline()) {
-            cancelPendingTask(playerId);
             return;
         }
         if (!authBridge.isConnected()) {
-            cancelPendingTask(playerId);
             return;
         }
         if (targetPlayer.hasPermission("authmeui.bypass")) {
-            cancelPendingTask(playerId);
             return;
         }
-        boolean authenticated = authBridge.isPlayerAuthenticated(targetPlayer);
-        if (authenticated) {
+        if (authBridge.isPlayerAuthenticated(targetPlayer)) {
+            dialogShownInSession.remove(playerId);
             return;
         }
         if (!dialogShownInSession.add(playerId)) {
-            cancelPendingTask(playerId);
             return;
         }
 
         boolean hasAccount = authBridge.isPlayerRegistered(targetPlayer.getName());
         dialogManager.presentAuthDialog(targetPlayer, hasAccount);
-        cancelPendingTask(playerId);
     }
 
     private void cancelPendingTask(UUID playerId) {
@@ -115,6 +136,12 @@ public class PlayerSessionListener implements Listener {
         if (task != null) {
             task.cancel();
         }
+    }
+
+    private void clearSessionState(UUID playerId) {
+        mustShowAuthDialogOnJoin.remove(playerId);
+        dialogShownInSession.remove(playerId);
+        cancelPendingTask(playerId);
     }
 
 }

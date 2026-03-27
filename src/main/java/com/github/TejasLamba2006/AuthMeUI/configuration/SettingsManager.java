@@ -93,14 +93,6 @@ public class SettingsManager {
         return config.getInt("dialogs.post-join-open-delay-ticks", 15);
     }
 
-    public int getPostJoinOpenRecheckIntervalTicks() {
-        return config.getInt("dialogs.post-join-open-recheck-interval-ticks", 10);
-    }
-
-    public int getPostJoinOpenMaxRechecks() {
-        return config.getInt("dialogs.post-join-open-max-rechecks", 10);
-    }
-
     public boolean canCloseWithEscape() {
         return config.getBoolean("dialogs.allow-escape-close", false);
     }

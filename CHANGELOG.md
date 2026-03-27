@@ -8,20 +8,18 @@ All notable changes to AuthMeUI will be documented in this file.
 
 ### Post-join authentication reliability
 
-- Reworked post-join dialog trigger to an independent `PlayerJoinEvent` polling flow.
-- Added `dialogs.post-join-open-delay-ticks` (default: `15`) for delayed polling start.
-- Added `dialogs.post-join-open-recheck-interval-ticks` (default: `10`) and `dialogs.post-join-open-max-rechecks` (default: `10`) for controlled rechecks.
-- Post-join logic now strictly uses AuthMe API state checks:
-  - authenticated players are skipped;
-  - registered but unauthenticated players receive login dialog;
+- Added deterministic join gating via `AuthMeAsyncPreLoginEvent`: when AuthMe marks a player as unable to login, the player UUID is flagged for post-join dialog.
+- `PlayerJoinEvent` now schedules a delayed check only for flagged UUIDs using `dialogs.post-join-open-delay-ticks`.
+- Dialog is shown only when the delayed check confirms the player is still unauthenticated:
+  - registered players receive login dialog;
   - unregistered players receive rules/register flow based on settings.
-- Join handler now runs on `EventPriority.NORMAL` for safer integration with other plugins updating join state.
+- Join handler runs on `EventPriority.NORMAL` for safer integration with other plugins updating join state.
 
 ### Duplicate dialog protection
 
 - Added in-session duplicate guard for post-join dialog opening using player UUID tracking.
-- Added `pendingJoinTasks<UUID, BukkitTask>` tracking to avoid duplicate polling tasks.
-- Added cleanup on `PlayerQuitEvent` (task cancellation + state cleanup) and after successful login/registration to prevent stale state.
+- Added `pendingJoinTasks<UUID, BukkitTask>` tracking to avoid duplicate delayed join tasks.
+- Added cleanup on `LoginEvent`, `RestoreSessionEvent`, and `PlayerQuitEvent` (task cancellation + state cleanup) to prevent stale state.
 
 ---
 
