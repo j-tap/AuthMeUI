@@ -8,7 +8,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.event.player.PlayerQuitEvent;
+
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles post-join authentication dialogs.
@@ -17,13 +21,10 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class PlayerSessionListener implements Listener {
 
-    private static final int INITIAL_DELAY_TICKS = 5;
-    private static final int CHECK_INTERVAL_TICKS = 5;
-    private static final int MAX_WAIT_TICKS = 20;
-
     private final AuthMeUIPlugin plugin;
     private final AuthenticationBridge authBridge;
     private final DialogManager dialogManager;
+    private final Set<UUID> dialogShownInSession = ConcurrentHashMap.newKeySet();
 
     public PlayerSessionListener(AuthMeUIPlugin plugin, AuthenticationBridge authBridge, DialogManager dialogManager) {
         this.plugin = plugin;
@@ -43,45 +44,38 @@ public class PlayerSessionListener implements Listener {
             return;
         }
 
-        scheduleAuthenticationCheck(joiningPlayer);
+        long delayTicks = Math.max(0L, plugin.getSettingsManager().getPostJoinOpenDelayTicks());
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> presentPostJoinDialogIfNeeded(joiningPlayer), delayTicks);
     }
 
-    private void scheduleAuthenticationCheck(Player player) {
-        new AuthenticationCheckTask(player).runTaskTimer(plugin, INITIAL_DELAY_TICKS, CHECK_INTERVAL_TICKS);
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        dialogShownInSession.remove(event.getPlayer().getUniqueId());
     }
 
-    private class AuthenticationCheckTask extends BukkitRunnable {
+    public void clearDialogShownState(UUID playerId) {
+        dialogShownInSession.remove(playerId);
+    }
 
-        private final Player targetPlayer;
-        private int elapsedTicks = 0;
-
-        AuthenticationCheckTask(Player player) {
-            this.targetPlayer = player;
+    private void presentPostJoinDialogIfNeeded(Player targetPlayer) {
+        if (!targetPlayer.isOnline()) {
+            return;
+        }
+        if (!authBridge.isConnected()) {
+            return;
+        }
+        if (targetPlayer.hasPermission("authmeui.bypass")) {
+            return;
+        }
+        if (authBridge.isPlayerAuthenticated(targetPlayer)) {
+            dialogShownInSession.remove(targetPlayer.getUniqueId());
+            return;
+        }
+        if (!dialogShownInSession.add(targetPlayer.getUniqueId())) {
+            return;
         }
 
-        @Override
-        public void run() {
-            if (!targetPlayer.isOnline()) {
-                cancel();
-                return;
-            }
-
-            if (authBridge.isPlayerAuthenticated(targetPlayer)) {
-                cancel();
-                return;
-            }
-
-            elapsedTicks += CHECK_INTERVAL_TICKS;
-
-            if (elapsedTicks >= MAX_WAIT_TICKS) {
-                presentAppropriateDialog();
-                cancel();
-            }
-        }
-
-        private void presentAppropriateDialog() {
-            boolean hasAccount = authBridge.isPlayerRegistered(targetPlayer.getName());
-            dialogManager.presentAuthDialog(targetPlayer, hasAccount);
-        }
+        boolean hasAccount = authBridge.isPlayerRegistered(targetPlayer.getName());
+        dialogManager.presentAuthDialog(targetPlayer, hasAccount);
     }
 }

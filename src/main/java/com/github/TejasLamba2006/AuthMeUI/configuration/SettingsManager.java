@@ -89,6 +89,10 @@ public class SettingsManager {
         return config.getInt("dialogs.configuration-phase-timeout", 60);
     }
 
+    public int getPostJoinOpenDelayTicks() {
+        return config.getInt("dialogs.post-join-open-delay-ticks", 15);
+    }
+
     public boolean canCloseWithEscape() {
         return config.getBoolean("dialogs.allow-escape-close", false);
     }

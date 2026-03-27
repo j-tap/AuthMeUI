@@ -24,6 +24,7 @@ public final class AuthMeUIPlugin extends JavaPlugin {
     private DialogManager dialogManager;
     private AnalyticsHandler analyticsHandler;
     private ConfigurationPhaseListener configurationPhaseListener;
+    private PlayerSessionListener playerSessionListener;
 
     @Override
     public void onEnable() {
@@ -69,6 +70,7 @@ public final class AuthMeUIPlugin extends JavaPlugin {
         if (settingsManager.useConfigurationPhase()) {
             configurationPhaseListener = new ConfigurationPhaseListener(
                     this, authBridge, dialogManager, settingsManager);
+            playerSessionListener = null;
 
             // Wire up the configuration phase listener to the dialog interaction listener
             dialogInteractionListener.setConfigurationPhaseListener(configurationPhaseListener);
@@ -78,9 +80,9 @@ public final class AuthMeUIPlugin extends JavaPlugin {
             getLogger().info("Configuration phase authentication enabled - dialogs will be shown before players join.");
         } else {
             // Register the player session listener for post-join authentication
-            pluginManager.registerEvents(
-                    new PlayerSessionListener(this, authBridge, dialogManager),
-                    this);
+            playerSessionListener = new PlayerSessionListener(this, authBridge, dialogManager);
+            pluginManager.registerEvents(playerSessionListener, this);
+            configurationPhaseListener = null;
         }
 
         // Always register the dialog interaction listener
@@ -141,5 +143,9 @@ public final class AuthMeUIPlugin extends JavaPlugin {
 
     public ConfigurationPhaseListener getConfigurationPhaseListener() {
         return configurationPhaseListener;
+    }
+
+    public PlayerSessionListener getPlayerSessionListener() {
+        return playerSessionListener;
     }
 }
