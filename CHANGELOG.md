@@ -4,6 +4,24 @@ All notable changes to AuthMeUI will be documented in this file.
 
 ---
 
+## [1.2.2] - 2026-03-27
+
+### Post-join authentication reliability
+
+- Reworked post-join dialog trigger to an independent `PlayerJoinEvent` flow that checks AuthMe state after a configurable delayed task.
+- Added `dialogs.post-join-open-delay-ticks` (default: `15`) to avoid race conditions right after join while AuthMe finalizes session state.
+- Post-join logic now strictly uses AuthMe API state checks:
+  - authenticated players are skipped;
+  - registered but unauthenticated players receive login dialog;
+  - unregistered players receive rules/register flow based on settings.
+
+### Duplicate dialog protection
+
+- Added in-session duplicate guard for post-join dialog opening using player UUID tracking.
+- Added cleanup on `PlayerQuitEvent` and after successful login/registration to prevent stale state.
+
+---
+
 ## [1.2.1] - 2026-03-27
 
 ### PlaceholderAPI support
