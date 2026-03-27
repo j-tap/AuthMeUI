@@ -33,6 +33,10 @@ dialogs:
   # Delay in ticks before opening post-join login/register dialog
   # Helps AuthMe finalize player's authentication state after join
   post-join-open-delay-ticks: 15
+  # Polling interval in ticks for post-join auth-state rechecks
+  post-join-open-recheck-interval-ticks: 10
+  # Maximum number of post-join polling attempts before task cancellation
+  post-join-open-max-rechecks: 10
   # Timeout in seconds for configuration phase authentication (default: 60)
   # After this time, the player will be disconnected if not authenticated
   configuration-phase-timeout: 60

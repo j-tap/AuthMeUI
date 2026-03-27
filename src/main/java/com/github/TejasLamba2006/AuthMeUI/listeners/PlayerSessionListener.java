@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handles post-join authentication dialogs.
@@ -72,18 +73,21 @@ public class PlayerSessionListener implements Listener {
             return;
         }
 
-        if (!mustShowAuthDialogOnJoin.remove(playerId)) {
-            cancelPendingTask(playerId);
-            return;
-        }
-
+        boolean forcedByPreLogin = mustShowAuthDialogOnJoin.remove(playerId);
         cancelPendingTask(playerId);
+        startJoinPolling(joiningPlayer, playerId, forcedByPreLogin);
+    }
 
+    private void startJoinPolling(Player joiningPlayer, UUID playerId, boolean forcedByPreLogin) {
         long delayTicks = Math.max(0L, plugin.getSettingsManager().getPostJoinOpenDelayTicks());
-        BukkitTask pendingTask = Bukkit.getScheduler().runTaskLater(
+        long recheckInterval = Math.max(1L, plugin.getSettingsManager().getPostJoinOpenRecheckIntervalTicks());
+        int maxRechecks = Math.max(1, plugin.getSettingsManager().getPostJoinOpenMaxRechecks());
+        AtomicInteger checksPerformed = new AtomicInteger(0);
+        BukkitTask pendingTask = Bukkit.getScheduler().runTaskTimer(
                 plugin,
-                () -> performPostJoinAuthCheck(joiningPlayer),
-                delayTicks);
+                () -> performPostJoinAuthCheck(joiningPlayer, checksPerformed, maxRechecks, forcedByPreLogin),
+                delayTicks,
+                recheckInterval);
         pendingJoinTasks.put(playerId, pendingTask);
     }
 
@@ -106,29 +110,46 @@ public class PlayerSessionListener implements Listener {
         clearSessionState(playerId);
     }
 
-    private void performPostJoinAuthCheck(Player targetPlayer) {
+    private void performPostJoinAuthCheck(
+            Player targetPlayer,
+            AtomicInteger checksPerformed,
+            int maxRechecks,
+            boolean forcedByPreLogin) {
         UUID playerId = targetPlayer.getUniqueId();
-        pendingJoinTasks.remove(playerId);
+        if (checksPerformed.incrementAndGet() > maxRechecks) {
+            cancelPendingTask(playerId);
+            return;
+        }
 
         if (!targetPlayer.isOnline()) {
+            cancelPendingTask(playerId);
             return;
         }
         if (!authBridge.isConnected()) {
+            cancelPendingTask(playerId);
             return;
         }
         if (targetPlayer.hasPermission("authmeui.bypass")) {
+            cancelPendingTask(playerId);
             return;
         }
-        if (authBridge.isPlayerAuthenticated(targetPlayer)) {
-            dialogShownInSession.remove(playerId);
+
+        boolean authenticated = authBridge.isPlayerAuthenticated(targetPlayer);
+        if (authenticated) {
+            if (!forcedByPreLogin) {
+                cancelPendingTask(playerId);
+            }
             return;
         }
+
         if (!dialogShownInSession.add(playerId)) {
+            cancelPendingTask(playerId);
             return;
         }
 
         boolean hasAccount = authBridge.isPlayerRegistered(targetPlayer.getName());
         dialogManager.presentAuthDialog(targetPlayer, hasAccount);
+        cancelPendingTask(playerId);
     }
 
     private void cancelPendingTask(UUID playerId) {
