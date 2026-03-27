@@ -101,6 +101,14 @@ public class SettingsManager {
         return config.getInt("dialogs.post-join-open-max-rechecks", 10);
     }
 
+    public boolean isDebugEnabled() {
+        return config.getBoolean("dialogs.debug", false);
+    }
+
+    public boolean isBypassPermissionEnabled() {
+        return config.getBoolean("dialogs.use-bypass-permission", true);
+    }
+
     public boolean canCloseWithEscape() {
         return config.getBoolean("dialogs.allow-escape-close", false);
     }

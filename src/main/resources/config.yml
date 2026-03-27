@@ -37,6 +37,11 @@ dialogs:
   post-join-open-recheck-interval-ticks: 10
   # Maximum number of post-join polling attempts before task cancellation
   post-join-open-max-rechecks: 10
+  # Whether authmeui.bypass permission should skip dialogs
+  # Set to false to always show dialogs for all players
+  use-bypass-permission: true
+  # Enable verbose logs for authentication dialog flow debugging
+  debug: false
   # Timeout in seconds for configuration phase authentication (default: 60)
   # After this time, the player will be disconnected if not authenticated
   configuration-phase-timeout: 60

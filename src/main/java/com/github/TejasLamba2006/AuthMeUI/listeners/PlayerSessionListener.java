@@ -52,10 +52,12 @@ public class PlayerSessionListener implements Listener {
         UUID playerId = player.getUniqueId();
         if (!event.canLogin()) {
             mustShowAuthDialogOnJoin.add(playerId);
+            debug(player, "AuthMeAsyncPreLoginEvent: canLogin=false, marking forced dialog on join");
             return;
         }
 
         mustShowAuthDialogOnJoin.remove(playerId);
+        debug(player, "AuthMeAsyncPreLoginEvent: canLogin=true, clearing forced dialog flag");
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -64,17 +66,20 @@ public class PlayerSessionListener implements Listener {
         UUID playerId = joiningPlayer.getUniqueId();
 
         if (!authBridge.isConnected()) {
+            debug(joiningPlayer, "Join: AuthMe bridge is not connected, skipping");
             return;
         }
 
-        if (joiningPlayer.hasPermission("authmeui.bypass")) {
+        if (shouldBypass(joiningPlayer)) {
             mustShowAuthDialogOnJoin.remove(playerId);
             cancelPendingTask(playerId);
+            debug(joiningPlayer, "Join: player has bypass permission, skipping");
             return;
         }
 
         boolean forcedByPreLogin = mustShowAuthDialogOnJoin.remove(playerId);
         cancelPendingTask(playerId);
+        debug(joiningPlayer, "Join: scheduling polling, forcedByPreLogin=" + forcedByPreLogin);
         startJoinPolling(joiningPlayer, playerId, forcedByPreLogin);
     }
 
@@ -83,6 +88,8 @@ public class PlayerSessionListener implements Listener {
         long recheckInterval = Math.max(1L, plugin.getSettingsManager().getPostJoinOpenRecheckIntervalTicks());
         int maxRechecks = Math.max(1, plugin.getSettingsManager().getPostJoinOpenMaxRechecks());
         AtomicInteger checksPerformed = new AtomicInteger(0);
+        debug(joiningPlayer,
+                "Polling start: delay=" + delayTicks + ", interval=" + recheckInterval + ", maxRechecks=" + maxRechecks);
         BukkitTask pendingTask = Bukkit.getScheduler().runTaskTimer(
                 plugin,
                 () -> performPostJoinAuthCheck(joiningPlayer, checksPerformed, maxRechecks, forcedByPreLogin),
@@ -93,16 +100,19 @@ public class PlayerSessionListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onLogin(LoginEvent event) {
+        debug(event.getPlayer(), "LoginEvent: clearing post-join state");
         clearSessionState(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRestoreSession(RestoreSessionEvent event) {
+        debug(event.getPlayer(), "RestoreSessionEvent: clearing post-join state");
         clearSessionState(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
+        debug(event.getPlayer(), "PlayerQuitEvent: clearing post-join state");
         clearSessionState(event.getPlayer().getUniqueId());
     }
 
@@ -116,20 +126,26 @@ public class PlayerSessionListener implements Listener {
             int maxRechecks,
             boolean forcedByPreLogin) {
         UUID playerId = targetPlayer.getUniqueId();
-        if (checksPerformed.incrementAndGet() > maxRechecks) {
+        int currentCheck = checksPerformed.incrementAndGet();
+        if (currentCheck > maxRechecks) {
+            debug(targetPlayer, "Polling: reached max rechecks, canceling task");
             cancelPendingTask(playerId);
             return;
         }
+        debug(targetPlayer, "Polling check #" + currentCheck + ", forcedByPreLogin=" + forcedByPreLogin);
 
         if (!targetPlayer.isOnline()) {
+            debug(targetPlayer, "Polling: player offline, canceling task");
             cancelPendingTask(playerId);
             return;
         }
         if (!authBridge.isConnected()) {
+            debug(targetPlayer, "Polling: AuthMe bridge disconnected, canceling task");
             cancelPendingTask(playerId);
             return;
         }
-        if (targetPlayer.hasPermission("authmeui.bypass")) {
+        if (shouldBypass(targetPlayer)) {
+            debug(targetPlayer, "Polling: bypass permission detected, canceling task");
             cancelPendingTask(playerId);
             return;
         }
@@ -137,24 +153,31 @@ public class PlayerSessionListener implements Listener {
         if (forcedByPreLogin) {
             if (dialogShownInSession.add(playerId)) {
                 boolean hasAccount = authBridge.isPlayerRegistered(targetPlayer.getName());
+                debug(targetPlayer, "Polling: forced by pre-login, opening dialog (registered=" + hasAccount + ")");
                 dialogManager.presentAuthDialog(targetPlayer, hasAccount);
+            } else {
+                debug(targetPlayer, "Polling: forced branch skipped, dialog already shown in session");
             }
             cancelPendingTask(playerId);
             return;
         }
 
         boolean authenticated = authBridge.isPlayerAuthenticated(targetPlayer);
+        debug(targetPlayer, "Polling: AuthMe isAuthenticated=" + authenticated);
         if (authenticated) {
+            debug(targetPlayer, "Polling: authenticated=true in fallback branch, canceling task");
             cancelPendingTask(playerId);
             return;
         }
 
         if (!dialogShownInSession.add(playerId)) {
+            debug(targetPlayer, "Polling: dialog already shown in session, canceling task");
             cancelPendingTask(playerId);
             return;
         }
 
         boolean hasAccount = authBridge.isPlayerRegistered(targetPlayer.getName());
+        debug(targetPlayer, "Polling: unauthenticated fallback, opening dialog (registered=" + hasAccount + ")");
         dialogManager.presentAuthDialog(targetPlayer, hasAccount);
         cancelPendingTask(playerId);
     }
@@ -163,13 +186,39 @@ public class PlayerSessionListener implements Listener {
         BukkitTask task = pendingJoinTasks.remove(playerId);
         if (task != null) {
             task.cancel();
+            debug(playerId, "Canceled pending join task");
         }
     }
 
     private void clearSessionState(UUID playerId) {
         mustShowAuthDialogOnJoin.remove(playerId);
         dialogShownInSession.remove(playerId);
+        debug(playerId, "Cleared session state");
         cancelPendingTask(playerId);
+    }
+
+    private void debug(Player player, String message) {
+        if (!plugin.getSettingsManager().isDebugEnabled()) {
+            return;
+        }
+        plugin.getLogger().info("[PostJoinDebug] player=" + player.getName() + " uuid=" + player.getUniqueId() + " | " + message);
+    }
+
+    private void debug(UUID playerId, String message) {
+        if (!plugin.getSettingsManager().isDebugEnabled()) {
+            return;
+        }
+        plugin.getLogger().info("[PostJoinDebug] uuid=" + playerId + " | " + message);
+    }
+
+    private boolean shouldBypass(Player player) {
+        if (!plugin.getSettingsManager().isBypassPermissionEnabled()) {
+            if (player.hasPermission("authmeui.bypass")) {
+                debug(player, "Bypass permission exists but is disabled by config");
+            }
+            return false;
+        }
+        return player.hasPermission("authmeui.bypass");
     }
 
 }
