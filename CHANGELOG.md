@@ -4,6 +4,28 @@ All notable changes to AuthMeUI will be documented in this file.
 
 ---
 
+## [1.2.2] - 2026-03-27
+
+### Post-join authentication reliability
+
+- Added dual-path post-join flow:
+  - pre-login signal path via `AuthMeAsyncPreLoginEvent` (`mustShowAuthDialogOnJoin`);
+  - fallback state path that always runs delayed/polling checks on join.
+- Added `dialogs.post-join-open-delay-ticks`, `dialogs.post-join-open-recheck-interval-ticks`, and `dialogs.post-join-open-max-rechecks` for race-safe join polling.
+- Dialog is shown when polling detects player is unauthenticated:
+  - registered players receive login dialog;
+  - unregistered players receive rules/register flow based on settings.
+- When player is authenticated and not forced by pre-login signal, polling stops early; forced pre-login path continues rechecks up to `max-rechecks`.
+- Join handler runs on `EventPriority.NORMAL` for safer integration with other plugins updating join state.
+
+### Duplicate dialog protection
+
+- Added in-session duplicate guard for post-join dialog opening using player UUID tracking.
+- Added `pendingJoinTasks<UUID, BukkitTask>` tracking to avoid duplicate delayed join tasks.
+- Added cleanup on `LoginEvent`, `RestoreSessionEvent`, and `PlayerQuitEvent` (task cancellation + state cleanup) to prevent stale state.
+
+---
+
 ## [1.2.1] - 2026-03-27
 
 ### PlaceholderAPI support

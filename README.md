@@ -149,7 +149,7 @@ cd AuthMeUI
 mvn clean package
 ```
 
-The compiled JAR will be in `target/AuthMeUI-1.0.0.jar`
+The compiled JAR will be in `target/AuthMeUI-1.2.2.jar`
 
 ## Support
 

@@ -310,6 +310,7 @@ public class DialogInteractionListener implements Listener {
         switch (result) {
             case SUCCESS -> {
                 // Successful login; no further action needed
+                clearPostJoinDialogState(player);
             }
             case INVALID_PASSWORD -> displayLoginWithError(player, "login.password-incorrect");
             case NOT_REGISTERED -> displayRegistrationWithError(player, "login.not-registered");
@@ -329,7 +330,10 @@ public class DialogInteractionListener implements Listener {
         RegistrationResult result = authBridge.attemptRegistration(player, enteredPassword, confirmPassword);
 
         switch (result) {
-            case SUCCESS -> scheduleRegistrationVerification(player);
+            case SUCCESS -> {
+                clearPostJoinDialogState(player);
+                scheduleRegistrationVerification(player);
+            }
             case ALREADY_EXISTS -> displayLoginWithError(player, "register.already-registered");
             case PASSWORD_MISMATCH -> displayRegistrationWithError(player, "register.passwords-mismatch");
             case PASSWORD_TOO_SHORT -> {
@@ -409,6 +413,13 @@ public class DialogInteractionListener implements Listener {
 
     private void scheduleDialogReopen(Runnable action) {
         Bukkit.getScheduler().runTask(plugin, action);
+    }
+
+    private void clearPostJoinDialogState(Player player) {
+        PlayerSessionListener sessionListener = plugin.getPlayerSessionListener();
+        if (sessionListener != null) {
+            sessionListener.clearDialogShownState(player.getUniqueId());
+        }
     }
 
     private boolean isNullOrEmpty(String value) {

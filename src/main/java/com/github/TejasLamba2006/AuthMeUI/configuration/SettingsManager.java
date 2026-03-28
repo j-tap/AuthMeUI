@@ -89,6 +89,26 @@ public class SettingsManager {
         return config.getInt("dialogs.configuration-phase-timeout", 60);
     }
 
+    public int getPostJoinOpenDelayTicks() {
+        return config.getInt("dialogs.post-join-open-delay-ticks", 15);
+    }
+
+    public int getPostJoinOpenRecheckIntervalTicks() {
+        return config.getInt("dialogs.post-join-open-recheck-interval-ticks", 10);
+    }
+
+    public int getPostJoinOpenMaxRechecks() {
+        return config.getInt("dialogs.post-join-open-max-rechecks", 10);
+    }
+
+    public boolean isDebugEnabled() {
+        return config.getBoolean("dialogs.debug", false);
+    }
+
+    public boolean isBypassPermissionEnabled() {
+        return config.getBoolean("dialogs.use-bypass-permission", true);
+    }
+
     public boolean canCloseWithEscape() {
         return config.getBoolean("dialogs.allow-escape-close", false);
     }
