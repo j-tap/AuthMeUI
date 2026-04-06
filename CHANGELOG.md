@@ -4,6 +4,17 @@ All notable changes to AuthMeUI will be documented in this file.
 
 ---
 
+## [1.2.3] - 2026-04-06
+
+### Registration and login error messages
+
+- **AuthMe-aligned password checks before register** — validates password using the same rules as AuthMe (allowed character regex, username match, length, unsafe-password list, registration enabled) so the dialog shows a clear reason instead of a generic failure or relying on easy-to-miss chat messages.
+- **New registration outcomes** — distinct UI messages for unsafe/blacklisted password, password same as username, forbidden characters (with `%pattern%` from AuthMe config), registration disabled, and service unavailable.
+- **Login outcomes** — separate messages for empty password, AuthMe unavailable, and unexpected errors instead of always showing “incorrect password.”
+- **Config path alignment** — min/max password length reads `settings.security.*` with fallback to legacy `security.*` keys.
+
+---
+
 ## [1.2.2] - 2026-03-27
 
 ### Post-join authentication reliability
