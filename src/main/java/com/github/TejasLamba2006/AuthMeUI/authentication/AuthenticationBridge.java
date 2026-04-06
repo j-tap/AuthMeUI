@@ -2,6 +2,7 @@ package com.github.TejasLamba2006.AuthMeUI.authentication;
 
 import fr.xephi.authme.api.v3.AuthMeApi;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -52,19 +53,34 @@ public class AuthenticationBridge {
     }
 
     public int fetchMinPasswordLength() {
-        Plugin authMe = Bukkit.getPluginManager().getPlugin("AuthMe");
-        if (authMe != null && authMe.isEnabled()) {
-            return authMe.getConfig().getInt("security.minPasswordLength", 5);
-        }
-        return 5;
+        return readAuthMeConfigInt("settings.security.minPasswordLength", "security.minPasswordLength", 5);
     }
 
     public int fetchMaxPasswordLength() {
+        return readAuthMeConfigInt("settings.security.passwordMaxLength", "security.passwordMaxLength", 30);
+    }
+
+    /**
+     * Allowed password character regex from AuthMe config (for error messages).
+     */
+    public String fetchAllowedPasswordPattern() {
+        return new AuthMePasswordRules(Bukkit.getPluginManager().getPlugin("AuthMe"))
+                .allowedPasswordPatternForDisplay();
+    }
+
+    private static int readAuthMeConfigInt(String primary, String legacy, int def) {
         Plugin authMe = Bukkit.getPluginManager().getPlugin("AuthMe");
-        if (authMe != null && authMe.isEnabled()) {
-            return authMe.getConfig().getInt("security.passwordMaxLength", 30);
+        if (authMe == null || !authMe.isEnabled()) {
+            return def;
         }
-        return 30;
+        FileConfiguration cfg = authMe.getConfig();
+        if (cfg.contains(primary)) {
+            return cfg.getInt(primary);
+        }
+        if (cfg.contains(legacy)) {
+            return cfg.getInt(legacy);
+        }
+        return def;
     }
 
     public AuthResult attemptLogin(Player player, String password) {
@@ -144,19 +160,14 @@ public class AuthenticationBridge {
             return RegistrationResult.INVALID_PASSWORD;
         }
 
-        int minLength = fetchMinPasswordLength();
-        int maxLength = fetchMaxPasswordLength();
-
-        if (password.length() < minLength) {
-            return RegistrationResult.PASSWORD_TOO_SHORT;
-        }
-
-        if (password.length() > maxLength) {
-            return RegistrationResult.PASSWORD_TOO_LONG;
-        }
-
         if (confirmPassword != null && !confirmPassword.isBlank() && !password.equals(confirmPassword)) {
             return RegistrationResult.PASSWORD_MISMATCH;
+        }
+
+        Plugin authMePlugin = Bukkit.getPluginManager().getPlugin("AuthMe");
+        RegistrationResult policy = new AuthMePasswordRules(authMePlugin).validate(password, playerName);
+        if (policy != null) {
+            return policy;
         }
 
         try {
@@ -190,19 +201,14 @@ public class AuthenticationBridge {
             return RegistrationResult.INVALID_PASSWORD;
         }
 
-        int minLength = fetchMinPasswordLength();
-        int maxLength = fetchMaxPasswordLength();
-
-        if (password.length() < minLength) {
-            return RegistrationResult.PASSWORD_TOO_SHORT;
-        }
-
-        if (password.length() > maxLength) {
-            return RegistrationResult.PASSWORD_TOO_LONG;
-        }
-
         if (confirmPassword != null && !confirmPassword.isBlank() && !password.equals(confirmPassword)) {
             return RegistrationResult.PASSWORD_MISMATCH;
+        }
+
+        Plugin authMePlugin = Bukkit.getPluginManager().getPlugin("AuthMe");
+        RegistrationResult policy = new AuthMePasswordRules(authMePlugin).validate(password, playerName);
+        if (policy != null) {
+            return policy;
         }
 
         try {
@@ -231,6 +237,10 @@ public class AuthenticationBridge {
         PASSWORD_TOO_SHORT,
         PASSWORD_TOO_LONG,
         INVALID_PASSWORD,
+        PASSWORD_UNSAFE,
+        PASSWORD_SAME_AS_USERNAME,
+        PASSWORD_FORBIDDEN_CHARACTERS,
+        REGISTRATION_DISABLED,
         SERVICE_UNAVAILABLE,
         ERROR
     }

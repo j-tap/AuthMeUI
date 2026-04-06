@@ -177,8 +177,16 @@ public class DialogInteractionListener implements Listener {
                         placeholderTarget,
                         error));
             }
-            default -> {
-                Component error = settings.getMessage(localeTag, "login.password-incorrect", placeholderTarget);
+            case EMPTY_PASSWORD -> {
+                Component error = settings.getMessage(localeTag, "login.password-empty", placeholderTarget);
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget, error));
+            }
+            case SERVICE_UNAVAILABLE -> {
+                Component error = settings.getMessage(localeTag, "login.service-unavailable", placeholderTarget);
+                audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget, error));
+            }
+            case ERROR -> {
+                Component error = settings.getMessage(localeTag, "login.unexpected-error", placeholderTarget);
                 audience.showDialog(dialogManager.createLoginDialogForAudience(playerName, localeTag, placeholderTarget, error));
             }
         }
@@ -258,6 +266,55 @@ public class DialogInteractionListener implements Listener {
                         placeholderTarget,
                         error));
             }
+            case PASSWORD_UNSAFE -> {
+                Component error = settings.getMessage(localeTag, "register.password-unsafe", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
+            }
+            case PASSWORD_SAME_AS_USERNAME -> {
+                Component error = settings.getMessage(localeTag, "register.password-same-as-username", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
+            }
+            case PASSWORD_FORBIDDEN_CHARACTERS -> {
+                Component error = settings.getMessage(localeTag, "register.password-forbidden-characters",
+                        placeholderTarget, Map.of("pattern", authBridge.fetchAllowedPasswordPattern()));
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
+            }
+            case REGISTRATION_DISABLED -> {
+                Component error = settings.getMessage(localeTag, "register.registration-disabled", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
+            }
+            case SERVICE_UNAVAILABLE -> {
+                Component error = settings.getMessage(localeTag, "register.service-unavailable", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
+            }
+            case ERROR -> {
+                Component error = settings.getMessage(localeTag, "register.failed", placeholderTarget);
+                audience.showDialog(dialogManager.createRegistrationDialogForAudience(
+                        playerName,
+                        localeTag,
+                        placeholderTarget,
+                        error));
+            }
             default -> {
                 Component error = settings.getMessage(localeTag, "register.failed", placeholderTarget);
                 audience.showDialog(dialogManager.createRegistrationDialogForAudience(
@@ -314,7 +371,9 @@ public class DialogInteractionListener implements Listener {
             }
             case INVALID_PASSWORD -> displayLoginWithError(player, "login.password-incorrect");
             case NOT_REGISTERED -> displayRegistrationWithError(player, "login.not-registered");
-            default -> displayLoginWithError(player, "login.password-incorrect");
+            case EMPTY_PASSWORD -> displayLoginWithError(player, "login.password-empty");
+            case SERVICE_UNAVAILABLE -> displayLoginWithError(player, "login.service-unavailable");
+            case ERROR -> displayLoginWithError(player, "login.unexpected-error");
         }
     }
 
@@ -347,6 +406,13 @@ public class DialogInteractionListener implements Listener {
                         Map.of("max", String.valueOf(maxLength)));
             }
             case INVALID_PASSWORD -> displayRegistrationWithError(player, "register.password-invalid");
+            case PASSWORD_UNSAFE -> displayRegistrationWithError(player, "register.password-unsafe");
+            case PASSWORD_SAME_AS_USERNAME -> displayRegistrationWithError(player, "register.password-same-as-username");
+            case PASSWORD_FORBIDDEN_CHARACTERS -> displayRegistrationWithError(player, "register.password-forbidden-characters",
+                    Map.of("pattern", authBridge.fetchAllowedPasswordPattern()));
+            case REGISTRATION_DISABLED -> displayRegistrationWithError(player, "register.registration-disabled");
+            case SERVICE_UNAVAILABLE -> displayRegistrationWithError(player, "register.service-unavailable");
+            case ERROR -> displayRegistrationWithError(player, "register.failed");
             default -> displayRegistrationWithError(player, "register.failed");
         }
     }
